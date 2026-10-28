@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HelpChoreAI — RBC Protocol-Variance Auditor</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<header>
+  <div><h1>HelpChoreAI</h1><p class="sub">Biophysical measurement &amp; protocol-variance auditing — microfluidic RBC recordings, VPS13A research</p></div>
+  <div id="liveBadges" class="badges"></div>
+</header>
+<p class="notice">Research use only. RBC morphology is a peripheral target-engagement marker, not a measure of CNS progression. Dataset: Reichel et al. 2022, Figshare Collection 5793482 (CC BY 4.0). Every result requires qualified-researcher review in the overlay.</p>
+<nav>
+  <button data-view="setup" class="active">1 · Visit-Pair Setup</button>
+  <button data-view="overlay">2 · Per-Cell Overlay Review</button>
+  <button data-view="decision">3 · RCV Decision</button>
+  <button data-view="report">4 · Verified Report</button>
+</nav>
+<main>
+<section id="view-setup">
+  <h2>Visit-pair setup</h2>
+  <label>Patient <select id="selPatient"></select></label>
+  <label>From visit <select id="selFrom"></select></label>
+  <label>To visit <select id="selTo"></select></label>
+  <div id="pairContext" class="card"></div>
+  <h3>All visit pairs (flow-adjusted, RCV-filtered)</h3>
+  <div id="pairsTable"></div>
+</section>
+<section id="view-overlay" hidden>
+  <h2>Per-cell overlay review — adjudication queue</h2>
+  <p>Classifier is triage only (LOPO κ ≈ 0.24; contour roughness did not improve it). Low-confidence and disagreeing cells wait here for human labels. Your label is the second rater: κ / Gwet AC1 vs the author label update live.</p>
+  <div class="row"><div id="queueList" class="card scroll"></div>
+  <div class="card"><div class="imgwrap"><img id="stripImg" alt="microfluidic strip (real frame)"><svg id="stripSvg" viewBox="0 0 1280 40" preserveAspectRatio="none"><polygon id="stripPoly" points="" fill="none" stroke="#dc2626" stroke-width="2"/></svg></div>
+  <div class="imgwrap cropwrap"><img id="cropImg" alt="zoomed cell crop (real frame)"><svg id="cellSvg" viewBox="0 0 200 40"><polygon id="cellPoly" points="" fill="rgba(13,118,110,.18)" stroke="#0d766e" stroke-width="1.5"/></svg></div>
+  <p class="hint">Real grayscale frames extracted from <span class="mono">*_imaq.avi</span> via HTTP Range (sample cells: P1 0w M10 cells 4, 11, 19). Contour alone misses surface spicules — judge from the image, not the outline.</p>
+  <svg id="cellSvgBlank" viewBox="0 0 100 100" width="120" height="120" hidden><polygon id="cellPolyBlank" points=""/></svg>
+  <div id="cellInfo"></div>
+  <div><button id="btnHealthy">Rater: Healthy (0)</button> <button id="btnUnhealthy">Rater: Unhealthy (1)</button></div>
+  <div id="kappaBox" class="card"></div></div></div>
+</section>
+<section id="view-decision" hidden>
+  <h2>Raw vs flow-adjusted change, RCV95 band</h2>
+  <div id="decisionCard" class="card"></div>
+  <div class="card"><h3>Longitudinal trajectory — selected patient</h3><div id="longChart"></div>
+  <p class="hint">Gray = raw, teal = flow-adjusted (±1.96·SD band). Red zones = QC-blocked visits (skip rate &gt; 0.25).</p></div>
+  <div class="card"><h3>Trial Run-Count Planner</h3>
+  <label>Target MDC95 <input id="plTarget" type="number" step="0.01" value="0.05"></label>
+  <label>Expected fraction p <input id="plP" type="number" step="0.01" value="0.40"></label>
+  <label>Overdispersion φ <input id="plPhi" type="number" step="0.1" value="2.5"></label>
+  <label>Cells per run <input id="plCells" type="number" step="10" value="110"></label>
+  <button id="btnPlan">Calculate runs needed</button> <span id="planOut"></span>
+  <p class="hint">Per-visit variance = φ·p(1−p)/N + label variance, N = runs × cells/run. RCV95 = 1.96·√(2·var). Label error 0.391 (Step 3 proxy).</p></div>
+  <p>Reference flow 0.016 µL/s. Patient-intercept GLM + cluster bootstrap (run-level, B=400). QC-blocked pairs (skip rate &gt; 0.25 or low kept cells) are refused a decision.</p>
+</section>
+<section id="view-report" hidden>
+  <h2>Verified report — Checker gate</h2>
+  <div><button id="btnReport">Generate &amp; verify report</button>
+  <button id="btnTamperNumber">Simulate Tamper: modified number</button>
+  <button id="btnTamperAdvice">Simulate Tamper: clinical-advice phrase</button>
+  <button id="btnTamperPayload">Simulate Tamper: payload edit</button></div>
+  <pre id="reportBox" class="card"></pre>
+  <div id="gateBox" class="card"></div>
+  <div class="card"><strong>Researcher sign-off (mandatory):</strong>
+  <button id="btnApprove">Approve</button> <button id="btnFlag">Flag</button> <span id="signoffState">Not reviewed</span></div>
+</section>
+</main>
+<script src="/app.js"></script>
+</body></html>

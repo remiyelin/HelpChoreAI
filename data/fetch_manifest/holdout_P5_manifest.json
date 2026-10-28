@@ -1,0 +1,23 @@
+{
+ "patient": "P5",
+ "sealed": true,
+ "parts": [
+  {
+   "part": 1,
+   "size": 21474836480,
+   "md5": "b9fa203f92d9ff8412c5464d41a1dc4c",
+   "article_id": 18857459
+  },
+  {
+   "part": 2,
+   "size": 17287538848,
+   "md5": "9691cbe8cd2378a0a61deafda8343b6b",
+   "article_id": 18857462
+  }
+ ],
+ "entry_count": 748,
+ "cd_sha256": "9933acef71235b3ccd5a5857991c82c03c37736d1ac496477b3cdf5235119804",
+ "entry_names_sha256": "a390703519e89b29f2994fa3eed0c4397ace7b47d897984abcfd32a2986c9fee",
+ "total_bytes": 38762375328,
+ "created": "2026-10-28T13:14:51.721Z"
+}

@@ -1,0 +1,14 @@
+[
+ {
+  "patient": "P4",
+  "entry": "P4__20170907_P4(0w)__Offline__M10_results.p",
+  "bytes": 5624793,
+  "sha256": "9db99105845ce7db91ca7df142e3f6edacc0a7ec04f2a57909ceb11305b7e2be"
+ },
+ {
+  "patient": "P4",
+  "entry": "P4__20180109_P4(18w)__Offline__M10_results.p",
+  "bytes": 11371944,
+  "sha256": "f6c879cb07e899c9673c436366a19eaaaaa3cbef35ae5af312938ec4332726b4"
+ }
+]

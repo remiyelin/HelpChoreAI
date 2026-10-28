@@ -1,0 +1,32 @@
+# HelpChoreAI .gitignore — user-requested exclusions first
+Event Details.md
+.venv/
+.uv-cache/
+.tmp/
+__pycache__/
+*.pyc
+
+# Raw secrets / credentials — never commit
+*.pem
+private_key*
+auth.json
+.env
+.env.*
+*.key
+
+# Extracted raw research data (re-fetchable via tools/figshare_ingest.*)
+data/dev/
+data/frames/
+data/reviews.json
+data/checker/private_key.pem
+
+# Vendored author downloads (fetch from GitLab/Figshare instead)
+vendor/
+
+# Step 1 fetch log captured pre-deidentification source filenames — local only
+data/fetch_manifest/fetch_log_step1.json
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

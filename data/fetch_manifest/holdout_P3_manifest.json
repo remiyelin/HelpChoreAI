@@ -1,0 +1,41 @@
+{
+ "patient": "P3",
+ "sealed": true,
+ "parts": [
+  {
+   "part": 1,
+   "size": 21474836480,
+   "md5": "a28e833800be629f6c72c26c8684fb54",
+   "article_id": 18857402
+  },
+  {
+   "part": 2,
+   "size": 21474836480,
+   "md5": null,
+   "article_id": 18857432
+  },
+  {
+   "part": 3,
+   "size": 21474836480,
+   "md5": "56dee8253e90e7e85da6d84d009b1d8b",
+   "article_id": 18857435
+  },
+  {
+   "part": 4,
+   "size": 21474836480,
+   "md5": "b7563dd4fed21109d8d4a563d49c6e24",
+   "article_id": 18857441
+  },
+  {
+   "part": 5,
+   "size": 5631989975,
+   "md5": "6434d705d203da589340d0bdc8fb9bb5",
+   "article_id": 18857444
+  }
+ ],
+ "entry_count": 1510,
+ "cd_sha256": "9f656b31fbaf353b46dc594b748d08beac0a41807de4e053cca2104e162bf4ca",
+ "entry_names_sha256": "9d6e073f6d8ac9d0bc84a13ca5f4abe32d9a14a7d191237ebcf6a85a7db0ad15",
+ "total_bytes": 91531335895,
+ "created": "2026-10-28T13:13:49.006Z"
+}
