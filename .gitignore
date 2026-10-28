@@ -17,6 +17,7 @@ auth.json
 # Extracted raw research data (re-fetchable via tools/figshare_ingest.*)
 data/dev/
 data/frames/
+data/api_cache/
 data/reviews.json
 data/checker/private_key.pem
 

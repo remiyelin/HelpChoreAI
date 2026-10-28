@@ -10,7 +10,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent))
+from env import load_env
+load_env()
 import checker
+import meta_api
 from step2_analysis import RestrictedUnpickler
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -125,7 +128,33 @@ class H(BaseHTTPRequestHandler):
             if path == "/api/pairs": return self.send_json(pd.read_csv(TABLES / "visit_pairs_decisions_v2.csv").to_dict("records"))
             if path == "/api/queue":
                 q = pd.read_csv(TABLES / "adjudication_queue.csv")
-                return self.send_json(q.head(200).to_dict("records"))
+                targets = {}
+                tf = ROOT / "data" / "frames" / "targets.json"
+                if tf.exists():
+                    for pp, dd in json.loads(tf.read_text()).items():
+                        for dt, rows in dd.items():
+                            for r in rows: targets[(pp, str(dt), int(r["cell"]))] = int(r["frame"])
+                def has_frame(r):
+                    fr = targets.get((r.patient, str(r.date), int(r.cell)))
+                    return bool(fr is not None and (ROOT / "data" / "frames" / f"{r.patient}_{r.date}_M10" / f"frame_{fr}.raw").exists())
+                q["has_frame"] = [has_frame(r) for r in q.itertuples()]
+                q = q.sort_values(["has_frame", "confidence"], ascending=[False, True])
+                return self.send_json(q.head(300).to_dict("records"))
+            if path.startswith("/api/sam/"):
+                seg = path.split("/"); patient, date, cell = seg[3], seg[4], int(seg[5])
+                got = frame_png(patient, date, cell, crop=True)
+                if got is None: return self.send_json({"status": "BLOCKED", "detail": "no real frame for this cell"}, 200)
+                png, info = got
+                sam = meta_api.sam_segment(png)
+                out = {"sam": sam, "author_contour_crop": info.get("contour_crop"), "frame": info.get("frame")}
+                if sam.get("status") == "OK":
+                    out["iou_vs_author"] = round(meta_api.polygon_iou(sam["polygon"], info["contour_crop"], 200, 40), 3)
+                return self.send_json(out)
+            if path.startswith("/api/sparkcheck/"):
+                seg = path.split("/"); patient, date, cell = seg[3], seg[4], int(seg[5])
+                got = frame_png(patient, date, cell, crop=True)
+                if got is None: return self.send_json({"status": "BLOCKED", "detail": "no real frame for this cell"}, 200)
+                return self.send_json(meta_api.spark_visual_check(got[0]))
             if path == "/api/kappa":
                 rev = json.loads(REVIEWS.read_text()) if REVIEWS.exists() else []
                 f = pd.read_csv(TABLES / "cell_features_M10.csv")
@@ -160,11 +189,18 @@ class H(BaseHTTPRequestHandler):
             if path.startswith("/api/report/"):
                 _, _, _, patient, frm, to = path.split("/")
                 env = checker.sign_payload(checker.build_payload(patient, frm, to))
-                report = checker.render_report(env, "Flow standardized change assessed against the combined noise band.")
+                narrative, nsrc = "Flow standardized change assessed against the combined noise band.", "template"
+                spark = meta_api.spark_narrative(env["payload"])
+                if spark.get("status") == "OK" and spark.get("text") and not any(ch.isdigit() for ch in spark["text"]):
+                    narrative, nsrc = spark["text"].strip(), f"muse-spark-1.3 ({spark.get('_cache')})"
+                report = checker.render_report(env, narrative)
                 ok, errs = checker.verify_envelope(env)
                 aok, aerrs = checker.audit_report(report, env)
+                ow = meta_api.baseten_audit(report, env["payload"])
                 return self.send_json({"envelope": env, "report": report, "verified": ok, "verify_errors": errs,
-                                       "audit_ok": aok, "audit_errors": aerrs, "open_weight": baseten_audit(report, env["payload"])})
+                                       "audit_ok": aok, "audit_errors": aerrs, "narrative_source": nsrc,
+                                       "cloud": {"model": "muse-spark-1.3", "narrative_source": nsrc, "checker_verified": ok},
+                                       "open_weight": ow})
             if path == "/" or path == "/index.html":
                 b = (WEB / "index.html").read_bytes(); self.send_response(200)
                 self.send_header("Content-Type", "text/html"); self.send_header("Content-Length", str(len(b)))

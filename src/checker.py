@@ -6,6 +6,11 @@ Run demo/tests: uv run python src/checker.py --demo   |   uv run pytest tests/ -
 """
 import hashlib, json, os, re, sys
 from pathlib import Path
+try:
+    from env import load_env
+    load_env()
+except Exception:
+    pass
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from cryptography.hazmat.primitives import serialization
 

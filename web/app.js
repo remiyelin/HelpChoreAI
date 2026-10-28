@@ -40,7 +40,7 @@ function planner(){const target=+$('#plTarget').value,p=+$('#plP').value,phi=+$(
 document.addEventListener('click',e=>{if(e.target.id==='btnPlan')planner()});
 function renderPairs(){$('#pairsTable').innerHTML='<table><tr><th>Pair</th><th>Δ raw</th><th>Δ adj</th><th>Decision</th></tr>'+pairs.map(p=>`<tr><td>${p.patient} ${p.from}→${p.to}</td><td>${fmt(p.delta_raw)}</td><td>${fmt(p.delta_adj)}</td><td>${p.decision}</td></tr>`).join('')+'</table>'}
 async function loadQueue(){queue=await j('/api/queue');
- $('#queueList').innerHTML=queue.slice(0,120).map((q,i)=>`<div class="qitem" data-i="${i}">${q.patient} ${q.visit} cell ${q.cell} · author health=${q.health} · pred=${q.pred} · conf=${Number(q.confidence).toFixed(2)}</div>`).join('');
+ $('#queueList').innerHTML=queue.slice(0,200).map((q,i)=>`<div class="qitem" data-i="${i}">${q.has_frame?'<b>[REAL FRAME]</b> ':''}${q.patient} ${q.visit} cell ${q.cell} · author health=${q.health} · pred=${q.pred} · conf=${Number(q.confidence).toFixed(2)}</div>`).join('');
  document.querySelectorAll('.qitem').forEach(el=>el.onclick=()=>selectCell(queue[+el.dataset.i]));}
 async function selectCell(q){selCell=q;const c=await j(`/api/cell/${q.patient}/${q.date}/${q.cell}`);
  const info=await j(`/api/frameinfo/${q.patient}/${q.date}/${q.cell}`);
@@ -53,7 +53,18 @@ async function rate(v){if(!selCell)return alert('Select a cell first');await j('
 async function updKappa(){const k=await j('/api/kappa');$('#kappaBox').innerHTML=k.n?`Second-rater labels: ${k.reviews} · vs author n=${k.n}<br>Agreement ${k.agreement} · Cohen κ <b>${k.kappa}</b> · Gwet AC1 <b>${k.ac1}</b>`:'No second-rater labels yet — label cells to compute κ / AC1.'}
 async function genReport(){const p=pair();const r=await j(`/api/report/${p.patient}/${p.from}/${p.to}`);
  $('#reportBox').textContent=r.report;
- $('#gateBox').innerHTML=`Checker verify: <b class="${r.verified?'ok':'blocked'}">${r.verified?'PASS':'FAIL'}</b> ${r.verify_errors.join('; ')}<br>Local auditor: <b class="${r.audit_ok?'ok':'blocked'}">${r.audit_ok?'PASS':'BLOCK'}</b> ${r.audit_errors.join('; ')}<br>Open-weight auditor (Baseten): <b>${r.open_weight.status}</b> — ${r.open_weight.detail}`;}
+ const ow=r.open_weight||{};
+ $('#gateBox').innerHTML=`<b>Cloud vs Open-Weight verification</b><br>Cloud muse-spark-1.3 narrative: ${r.narrative_source} · Checker: <b class="${r.verified?'ok':'blocked'}">${r.verified?'PASS':'FAIL'}</b> ${r.verify_errors.join('; ')}<br>Local rule auditor: <b class="${r.audit_ok?'ok':'blocked'}">${r.audit_ok?'PASS':'BLOCK'}</b> ${r.audit_errors.join('; ')}<br>Open-weight auditor meta-models/muse-spark-open-1026 (Baseten): <b>${ow.status||'—'}</b> ${ow.detail||''} ${ow._cache?'(cache '+ow._cache+')':''}`;}
+async function runSam(){if(!selCell)return alert('Select a cell first');$('#samBox').textContent='SAM 3.1 running (cached after first call)…';
+ const r=await j(`/api/sam/${selCell.patient}/${selCell.date}/${selCell.cell}`);
+ if(r.sam&&r.sam.status==='OK'){const svg=document.querySelector('#cellSvg');const poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  poly.setAttribute('points',r.sam.polygon.map(p=>p.join(',')).join(' '));poly.setAttribute('fill','rgba(245,158,11,.18)');poly.setAttribute('stroke','#d97706');poly.setAttribute('stroke-width','1.5');svg.appendChild(poly);
+  $('#samBox').innerHTML=`SAM 3.1 (amber) vs author contour (teal) · <b>IoU ${r.iou_vs_author}</b> · cache ${r.sam._cache}`;}
+ else $('#samBox').innerHTML=`<span class="blocked">SAM 3.1 ${(r.sam&&r.sam.status)||'BLOCKED'}:</span> ${(r.sam&&r.sam.detail)||r.detail||''}`;}
+async function runSpark(){if(!selCell)return alert('Select a cell first');$('#samBox').textContent='Muse Spark visual check running…';
+ const r=await j(`/api/sparkcheck/${selCell.patient}/${selCell.date}/${selCell.cell}`);
+ $('#samBox').innerHTML=r.status==='OK'?`<b>muse-spark-1.3 visual check</b> (cache ${r._cache}):<br>${r.text}`:`<span class="blocked">Muse Spark ${r.status}:</span> ${r.detail||''}`;}
+document.addEventListener('click',e=>{if(e.target.id==='btnSam')runSam();if(e.target.id==='btnSpark')runSpark();});
 async function tamper(mode){const p=pair();const r=await j('/api/tamper',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({patient:p.patient,from:p.from,to:p.to,mode})});
  $('#reportBox').textContent=r.report||JSON.stringify(r,null,1);
  const blocked=r.auditor_blocks_report||r.checker_blocks;
