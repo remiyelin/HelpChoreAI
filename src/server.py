@@ -86,7 +86,8 @@ def frame_png(patient, date, cell, crop=True):
         img = img[:, x0:x0 + 200]
         pts = [[round(float(x - x0), 1), round(float(y), 1)] for x, y in contour[::3]]
         full = [[round(float(x), 1), round(float(y), 1)] for x, y in contour[::3]]
-        return png_gray(img), {"frame": frame_no, "pos_x": round(pos_x, 1), "crop_x0": x0, "crop_w": 200, "contour_crop": pts, "contour_full": full}
+        fullres = [[round(float(x - x0), 1), round(float(y), 1)] for x, y in contour]
+        return png_gray(img), {"frame": frame_no, "pos_x": round(pos_x, 1), "crop_x0": x0, "crop_w": 200, "contour_crop": pts, "contour_full": full, "contour_crop_fullres": fullres}
     pts = [[round(float(x), 1), round(float(y), 1)] for x, y in contour[::3]]
     return png_gray(img), {"frame": frame_no, "pos_x": round(pos_x, 1), "contour_full": pts}
 
@@ -145,10 +146,9 @@ class H(BaseHTTPRequestHandler):
                 got = frame_png(patient, date, cell, crop=True)
                 if got is None: return self.send_json({"status": "BLOCKED", "detail": "no real frame for this cell"}, 200)
                 png, info = got
-                sam = meta_api.sam_segment(png)
-                out = {"sam": sam, "author_contour_crop": info.get("contour_crop"), "frame": info.get("frame")}
-                if sam.get("status") == "OK":
-                    out["iou_vs_author"] = round(meta_api.polygon_iou(sam["polygon"], info["contour_crop"], 200, 40), 3)
+                sam = meta_api.sam_segment(png, author_poly=info.get("contour_crop_fullres") or info.get("contour_crop"), wh=(200, 40))
+                out = {"sam": sam, "author_contour_crop": info.get("contour_crop"), "frame": info.get("frame"),
+                       "iou_vs_author": sam.get("iou_vs_author")}
                 return self.send_json(out)
             if path.startswith("/api/sparkcheck/"):
                 seg = path.split("/"); patient, date, cell = seg[3], seg[4], int(seg[5])

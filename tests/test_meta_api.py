@@ -5,10 +5,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 import meta_api
 
 def test_blocked_without_keys(monkeypatch):
+    import uuid
     monkeypatch.delenv("META_MODEL_API_KEY", raising=False)
     monkeypatch.delenv("BASETEN_API_KEY", raising=False)
     assert meta_api.sam_segment(b"png")["status"] == "BLOCKED"
-    assert meta_api.baseten_audit("report", {})["status"] == "BLOCKED"
+    # unique prompt: must miss cache, so a missing key yields BLOCKED (never a cached PASS)
+    assert meta_api.baseten_audit("report-" + uuid.uuid4().hex, {})["status"] == "BLOCKED"
 
 def test_cache_key_deterministic():
     a = meta_api._key("m", [{"role": "user", "content": "x"}])

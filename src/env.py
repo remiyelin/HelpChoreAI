@@ -2,7 +2,13 @@
 import os
 from pathlib import Path
 
+_LOADED = False
+
 def load_env() -> dict:
+    global _LOADED
+    if _LOADED:
+        return {}
+    _LOADED = True
     root = Path(__file__).resolve().parent.parent
     env_file = root / ".env"
     loaded = {}

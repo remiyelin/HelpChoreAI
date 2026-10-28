@@ -10,6 +10,8 @@ dependencies = [
     "scikit-learn",
     "cryptography",
     "pytest",
+    "openai",
+    "meta-sam-parser",
 ]
 
 [build-system]

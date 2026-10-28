@@ -39,7 +39,8 @@ def chat_cached(base_url, api_key, model, messages, extra=""):
         out = {"status": "OK", "model": model, "text": text, "raw_id": resp.get("id")}
     except Exception as e:
         out = {"status": "BLOCKED", "detail": f"{type(e).__name__}: {e}"}
-    hit.write_text(json.dumps(out, indent=1))
+    if out.get("status") == "OK":
+        hit.write_text(json.dumps(out, indent=1))
     return out | {"_cache": "miss"}
 
 def img_msg(text, png_bytes):
@@ -47,21 +48,142 @@ def img_msg(text, png_bytes):
     return [{"role": "user", "content": [{"type": "text", "text": text},
             {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}}]}]
 
-def sam_segment(png_bytes):
-    """SAM 3.1 segmentation via Meta Model API. Returns polygon points in image coords if parseable."""
-    key = os.environ.get("META_MODEL_API_KEY")
-    prompt = ("Segment the single red blood cell in the center of this grayscale microfluidic channel crop. "
-              "Reply ONLY with JSON: {\"polygon\": [[x,y],...]} using pixel coordinates of the input image. No other text.")
-    r = chat_cached(META_BASE, key, "sam-3.1", img_msg(prompt, png_bytes), extra=hashlib.sha256(png_bytes).hexdigest())
-    if r.get("status") != "OK": return r
-    m = re.search(r"\{.*\}", r.get("text", ""), re.S)
-    if not m: return {"status": "BLOCKED", "detail": "sam-3.1 reply contained no JSON polygon", "text_head": r.get("text", "")[:200], "_cache": r["_cache"]}
+def _mask_outline(raster: bytes, mw: int, mh: int, ox: int, oy: int):
+    """Row-span outline polygon (image coords) from a binary raster placed at (ox,oy)."""
+    import numpy as np
+    m = np.frombuffer(raster, dtype=np.uint8).reshape(mh, mw)
+    top, bot = [], []
+    for y in range(mh):
+        xs = np.flatnonzero(m[y])
+        if len(xs): top.append([int(xs[0]) + ox, y + oy]); bot.append([int(xs[-1]) + ox, y + oy])
+    if not top: return [], m
+    return top + bot[::-1], m
+
+def sam_segment(png_bytes, author_poly=None, wh=(200, 40)):
+    """REAL SAM 3.1 via Responses API (streaming) + official meta_sam_parser. Cached by image+prompt hash.
+    Concept prompt 'red blood cell' first; box-prompt (author box) fallback is labelled honestly.
+    Returns mask polygon in crop coords + raster IoU vs author polygon when provided."""
+    load_env()
+    key = os.environ.get("META_MODEL_API_KEY") or os.environ.get("MODEL_API_KEY")
+    if not key: return {"status": "BLOCKED", "detail": "META_MODEL_API_KEY not set"}
+    img_hash = hashlib.sha256(png_bytes).hexdigest()
+    CACHE.mkdir(parents=True, exist_ok=True)
+    ck = _key("sam-3.1", [{"img": img_hash, "author": author_poly}], extra="responses-v1")
+    hit = CACHE / f"{ck}.json"
+    if hit.exists():
+        out = json.loads(hit.read_text()); out["_cache"] = "hit"; return out
     try:
-        poly = json.loads(m.group(0)).get("polygon")
+        out = _sam_run(key, png_bytes, author_poly, wh)
     except Exception as e:
-        return {"status": "BLOCKED", "detail": f"polygon parse failed: {e}", "_cache": r["_cache"]}
-    if not poly or len(poly) < 3: return {"status": "BLOCKED", "detail": "empty polygon", "_cache": r["_cache"]}
-    return {"status": "OK", "model": "sam-3.1", "polygon": poly, "_cache": r["_cache"]}
+        out = {"status": "BLOCKED", "detail": f"{type(e).__name__}: {e}"}
+    if out.get("status") == "OK":
+        hit.write_text(json.dumps(out, indent=1))
+    return out | {"_cache": "miss"}
+
+def _sam_run(key, png_bytes, author_poly, wh):
+    import asyncio, base64
+    from meta_sam_parser import (parse_responses_stream, image_segmentation_format,
+                                 decode_mask_to_raster, build_object_prompt, PromptObject, PromptBox, FramePrompt)
+    w, h = wh
+    data_url = "data:image/png;base64," + base64.b64encode(png_bytes).decode()
+    async def events_of(stream):
+        completed = set()
+        async for event in stream:
+            data = event.model_dump() if hasattr(event, "model_dump") else dict(event)
+            lane = (data.get("item_id"), data.get("output_index"), data.get("content_index"))
+            if data.get("type") == "response.output_text.done":
+                if lane not in completed: completed.add(lane); yield data
+                continue
+            yield data
+            part = data.get("part")
+            if (data.get("type") == "response.content_part.done" and lane not in completed
+                    and isinstance(part, dict) and part.get("type") == "output_text" and isinstance(part.get("text"), str)):
+                completed.add(lane)
+                yield {"type": "response.output_text.done", "item_id": data.get("item_id"),
+                       "output_index": data.get("output_index"), "content_index": data.get("content_index"),
+                       "text": part["text"]}
+    def fetch_events(prompt_text):
+        """urllib SSE transport (httpx/OpenAI SDK sockets are blocked in some sandboxes; urllib works)."""
+        import urllib.request as _u
+        body = json.dumps({"model": "sam-3.1", "stream": True, "input": [
+            {"type": "message", "role": "user", "content": [
+                {"type": "input_text", "text": prompt_text},
+                {"type": "input_image", "image_url": data_url}]}]}).encode()
+        req = _u.Request(META_BASE.rstrip("/") + "/responses", data=body,
+                         headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+        events, completed = [], set()
+        with _u.urlopen(req, timeout=120) as r:
+            for raw in r:
+                line = raw.decode("utf-8", "replace").strip()
+                if not line.startswith("data:"): continue
+                payload = line[5:].strip()
+                if payload == "[DONE]": break
+                try: data = json.loads(payload)
+                except Exception: continue
+                lane = (data.get("item_id"), data.get("output_index"), data.get("content_index"))
+                if data.get("type") == "response.output_text.done":
+                    if lane not in completed: completed.add(lane); events.append(data)
+                    continue
+                events.append(data)
+                part = data.get("part")
+                if (data.get("type") == "response.content_part.done" and lane not in completed
+                        and isinstance(part, dict) and part.get("type") == "output_text" and isinstance(part.get("text"), str)):
+                    completed.add(lane)
+                    events.append({"type": "response.output_text.done", "item_id": data.get("item_id"),
+                                   "output_index": data.get("output_index"), "content_index": data.get("content_index"),
+                                   "text": part["text"]})
+        return events
+    async def run(prompt_text):
+        events = fetch_events(prompt_text)
+        async def agen():
+            for e in events: yield e
+        return await parse_responses_stream(agen(), image_segmentation_format()).final_result()
+    def records_of(result):
+        recs = []
+        for rec in getattr(result, "records", []) or []:
+            try:
+                raster = decode_mask_to_raster(rec.mask)
+                b = rec.bounds
+                left, top, right, bottom = int(b.left), int(b.top), int(b.right), int(b.bottom)
+                recs.append({"raster": raster, "mw": int(rec.mask.width), "mh": int(rec.mask.height),
+                             "left": left, "top": top, "right": right, "bottom": bottom})
+            except Exception:
+                continue
+        return recs
+    result = asyncio.run(run("red blood cell"))
+    recs, mode = records_of(result), "concept:red blood cell"
+    if not recs and author_poly:
+        xs = [p[0] for p in author_poly]; ys = [p[1] for p in author_poly]
+        prompt = build_object_prompt(size=(w, h), objects=[PromptObject(id="1", prompts=[
+            FramePrompt(frame=0, box=PromptBox(left=int(min(xs)), top=int(min(ys)), right=int(max(xs)), bottom=int(max(ys))))])])
+        result = asyncio.run(run(prompt))
+        recs, mode = records_of(result), "box-prompt(author box)"
+    if not recs:
+        return {"status": "BLOCKED", "detail": f"sam-3.1 returned zero masks ({mode})", "prompt_mode": mode}
+    # pick record whose box center is closest to author box center (or crop center)
+    cx = (sum(p[0] for p in author_poly) / len(author_poly)) if author_poly else w / 2
+    cy = (sum(p[1] for p in author_poly) / len(author_poly)) if author_poly else h / 2
+    rec = min(recs, key=lambda r: ((r["left"] + r["right"]) / 2 - cx) ** 2 + ((r["top"] + r["bottom"]) / 2 - cy) ** 2)
+    mw, mh = rec["mw"] or (rec["right"] - rec["left"] + 1), rec["mh"] or (rec["bottom"] - rec["top"] + 1)
+    poly, raster = _mask_outline(rec["raster"], mw, mh, rec["left"], rec["top"])
+    out = {"status": "OK", "model": "sam-3.1", "prompt_mode": mode, "polygon": poly,
+           "box": [rec["left"], rec["top"], rec["right"], rec["bottom"]], "records": len(recs)}
+    if author_poly:
+        import numpy as np
+        author_raster = np.zeros((h, w), dtype=np.uint8)
+        # rasterize author polygon via polygon_iou helper mask logic
+        yy, xx = np.mgrid[0:h, 0:w]; pts = np.asarray(author_poly, dtype=float)
+        inside = np.zeros((h, w), dtype=bool); x, y = pts[:, 0], pts[:, 1]; j = len(pts) - 1
+        for i in range(len(pts)):
+            cond = ((y[i] > yy) != (y[j] > yy)) & (xx < (x[j] - x[i]) * (yy - y[i]) / max(y[j] - y[i], 1e-9) + x[i])
+            inside ^= cond; j = i
+        sam_full = np.zeros((h, w), dtype=np.uint8)
+        sub = np.frombuffer(rec["raster"], dtype=np.uint8).reshape(mh, mw)
+        y0, y1, x0, x1 = rec["top"], min(h, rec["top"] + mh), rec["left"], min(w, rec["left"] + mw)
+        if y1 > y0 and x1 > x0: sam_full[y0:y1, x0:x1] = sub[:y1 - y0, :x1 - x0]
+        union = ((inside > 0) | (sam_full > 0)).sum()
+        out["iou_vs_author"] = round(float(((inside > 0) & (sam_full > 0)).sum() / union), 3) if union else 0.0
+    return out
 
 def spark_visual_check(png_bytes):
     key = os.environ.get("META_MODEL_API_KEY")
@@ -86,12 +208,15 @@ def baseten_audit(report, payload):
               "Flag clinical-advice language, disease-progression claims, patient identifiers, or any number "
               "not present in the payload. Reply starting with BLOCK or PASS, then one short reason.\nPAYLOAD: "
               + json.dumps(payload) + "\nREPORT:\n" + report)
-    r = chat_cached(BASETEN_URL.rsplit("/chat/completions", 1)[0], key, "meta-models/muse-spark-open-1026",
-                    [{"role": "user", "content": prompt}])
-    if r.get("status") != "OK": return r
-    txt = r.get("text", "")
-    return {"status": "BLOCK" if txt.strip().upper().startswith("BLOCK") else "PASS",
-            "model": "meta-models/muse-spark-open-1026", "detail": txt[:300], "_cache": r["_cache"]}
+    # Hackathon ID per guide; Baseten public changelog lists meta-models/muse-spark-open. Try in order, report served model.
+    for model in ["meta-models/muse-spark-open-1026", "meta-models/muse-spark-open"]:
+        r = chat_cached(BASETEN_URL.rsplit("/chat/completions", 1)[0], key, model,
+                        [{"role": "user", "content": prompt}])
+        if r.get("status") == "OK":
+            txt = r.get("text", "")
+            return {"status": "BLOCK" if txt.strip().upper().startswith("BLOCK") else "PASS",
+                    "model": model, "detail": txt[:300], "_cache": r["_cache"]}
+    return r
 
 def polygon_iou(poly_a, poly_b, w, h):
     """Raster IoU on a w x h grid (numpy, point-in-polygon via ray casting on pixel centers)."""
