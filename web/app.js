@@ -13,9 +13,35 @@ async function init(){
  $('#btnHealthy').onclick=()=>rate(0); $('#btnUnhealthy').onclick=()=>rate(1);
  $('#btnReport').onclick=genReport;
  $('#btnTamperNumber').onclick=()=>tamper('number'); $('#btnTamperAdvice').onclick=()=>tamper('advice'); $('#btnTamperPayload').onclick=()=>tamper('payload');
- $('#btnApprove').onclick=()=>signoff('Approved by qualified researcher (overlay review complete)');
- $('#btnFlag').onclick=()=>signoff('Flagged by researcher — do not use until re-reviewed');
+ $('#btnApprove').onclick=()=>signoff('Approved');
+ $('#btnFlag').onclick=()=>signoff('Flagged');
+ $('#btnDictate').onclick=dictate;
+ loadBenchmark();
 }
+async function loadBenchmark(){try{const b=await j('/api/benchmark');
+ if(b.status==='NOT_RUN'){$('#benchmarkCard').innerHTML=`<b>Live multi-model benchmark:</b> not run yet — <span class="mono">uv run python src/run_live_benchmark.py</span>`;return}
+ $('#benchmarkCard').innerHTML=`<b>Live multi-model benchmark</b> (cached real-data run, details in docs/LIVE_BENCHMARK.md)<br>SAM 3.1 IoU vs author: mean <b>${b.sam_iou_mean}</b> · median ${b.sam_iou_median} · range ${b.sam_iou_min}–${b.sam_iou_max} · ≥0.80: ${b.sam_iou_ge80_frac} (n=${b.sam_ok})<br>Muse Spark visual vs author agreement: <b>${b.spark_author_agreement}</b> (n=${b.spark_author_n}, keyword heuristic)<br>Cloud vs Open-Weight audit parity: <b>${b.parity_n}/${b.pairs_n} pairs</b>`;}catch(e){$('#benchmarkCard').textContent='Live benchmark: unavailable ('+e+')'}}
+let recCtx=null,recBuf=[],recStream=null,recording=false;
+function wavEncode(chunks,sampleRate){let len=0;for(const c of chunks)len+=c.length;const buf=new Float32Array(len);let o=0;for(const c of chunks){buf.set(c,o);o+=c.length}
+ const ds=Math.floor(sampleRate/16000)||1, n=Math.floor(buf.length/ds), pcm=new Int16Array(n);
+ for(let i=0;i<n;i++){const v=Math.max(-1,Math.min(1,buf[i*ds]));pcm[i]=v<0?v*32768:v*32767}
+ const ab=new ArrayBuffer(44+pcm.length*2), d=new DataView(ab);
+ const ws=(off,s)=>{for(let i=0;i<s.length;i++)d.setUint8(off+i,s.charCodeAt(i))};
+ ws(0,'RIFF');d.setUint32(4,36+pcm.length*2,true);ws(8,'WAVEfmt ');d.setUint32(16,16,true);d.setUint16(20,1,true);d.setUint16(22,1,true);
+ d.setUint32(24,16000,true);d.setUint32(28,32000,true);d.setUint16(32,2,true);d.setUint16(34,16,true);ws(36,'data');d.setUint32(40,pcm.length*2,true);
+ for(let i=0;i<pcm.length;i++)d.setInt16(44+i*2,pcm[i],true); return new Uint8Array(ab);}
+async function dictate(){const btn=$('#btnDictate');
+ if(!recording){try{recStream=await navigator.mediaDevices.getUserMedia({audio:true});}catch(e){$('#voiceState').textContent='Microphone unavailable: '+e.message+' — type the note instead.';return}
+  recCtx=new (window.AudioContext||window.webkitAudioContext)();recBuf=[];recording=true;btn.textContent='Stop & transcribe';
+  const src=recCtx.createMediaStreamSource(recStream),proc=recCtx.createScriptProcessor(4096,1,1);
+  proc.onaudioprocess=e=>recBuf.push(new Float32Array(e.inputBuffer.getChannelData(0)));src.connect(proc);proc.connect(recCtx.destination);recCtx._p=proc;$('#voiceState').textContent='Recording… click again to transcribe.';return}
+ recording=false;btn.textContent='Dictate note (Muse Voice)';
+ recStream.getTracks().forEach(t=>t.stop());const rate=recCtx.sampleRate;recCtx.close();
+ const wav=wavEncode(recBuf,rate);$('#voiceState').textContent='Transcribing with muse-voice-transcribe…';
+ let bin='';wav.forEach(b=>bin+=String.fromCharCode(b));
+ const r=await j('/api/transcribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({audio_b64:btoa(bin)})});
+ if(r.status==='OK'){$('#reviewNote').value=($('#reviewNote').value+' '+r.text).trim();$('#voiceState').textContent=`Transcribed (${r.model}, cache ${r._cache}, ${r.audio_ms??'—'} ms). Review the text, then Approve/Flag.`}
+ else $('#voiceState').innerHTML=`<span class="blocked">Voice ${r.status}:</span> ${r.detail||''} — type the note instead.`}
 function visits(){return [...new Set(pairs.filter(p=>p.patient===$('#selPatient').value).flatMap(p=>[p.from,p.to]))]}
 function fillVisits(){const v=visits();$('#selFrom').innerHTML=v.map(x=>`<option>${x}</option>`).join('');$('#selTo').innerHTML=v.map(x=>`<option>${x}</option>`).join('');if(v.length>1)$('#selTo').selectedIndex=1;showPair()}
 function pair(){return pairs.find(p=>p.patient===$('#selPatient').value&&p.from===$('#selFrom').value&&p.to===$('#selTo').value)}
@@ -69,5 +95,7 @@ async function tamper(mode){const p=pair();const r=await j('/api/tamper',{method
  $('#reportBox').textContent=r.report||JSON.stringify(r,null,1);
  const blocked=r.auditor_blocks_report||r.checker_blocks;
  $('#gateBox').innerHTML=`<span class="blocked">TAMPER SIMULATION (${r.tampered}): ${blocked?'BLOCKED':'NOT BLOCKED'}</span><br>${(r.auditor_errors||r.verify_errors||[]).join('<br>')}`;}
-function signoff(t){signed=true;$('#signoffState').innerHTML=`<b>${t}</b> — required before any result is final.`}
+async function signoff(decision){signed=true;const p=pair(),note=$('#reviewNote').value.trim();
+ await j('/api/signoff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({patient:p.patient,from:p.from,to:p.to,decision,note})});
+ $('#signoffState').innerHTML=`<b>${decision} by qualified researcher</b> (overlay review complete)${note?` — note saved: “${note.replace(/</g,'&lt;')}”`:''}. Required before any result is final.`}
 init();

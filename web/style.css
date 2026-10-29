@@ -20,3 +20,4 @@ select{font:inherit;padding:.3rem}label{margin-right:1rem}
 .cropwrap{max-width:520px}.cropwrap img{image-rendering:pixelated;height:104px;object-fit:fill}
 .hint{font-size:.82rem;color:var(--mut)}.mono{font-family:Consolas,monospace}
 input[type=number]{font:inherit;width:6rem;padding:.3rem}
+textarea{font:inherit;padding:.4rem;border:1px solid var(--line);max-width:100%}

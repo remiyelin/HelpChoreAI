@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+"""Cached live multi-model benchmark on real data. Spend guard: every call goes through
+data/api_cache/ (repeat runs are free); --max-new-calls aborts before exceeding the cap.
+
+Cells: stratified 30 queue cells across P1/P2/P4 (per patient, both author-health classes,
+confidence-spread) -> sam-3.1 IoU vs author contour + muse-spark-1.3 visual check.
+Pairs: all 21 visit pairs -> muse-spark-1.3 narrative + Baseten muse-spark-open audit parity
+vs the local Checker/auditor verdict on the same signed report.
+
+Run: uv run python src/run_live_benchmark.py [--max-new-calls 110] [--cells 30]
+Outputs: data/tables/live_benchmark_cells.csv, live_benchmark_pairs.csv,
+data/tables/live_benchmark_summary.json, docs/LIVE_BENCHMARK.md
+"""
+import argparse, json, sys
+from pathlib import Path
+import numpy as np
+import pandas as pd
+sys.path.insert(0, str(Path(__file__).parent))
+import checker, meta_api, server
+
+ROOT = Path(__file__).resolve().parent.parent
+TABLES, DOCS = ROOT / "data" / "tables", ROOT / "docs"
+
+
+def stratified_cells(n_total=30):
+    q = pd.read_csv(TABLES / "adjudication_queue.csv")
+    targets = json.loads((ROOT / "data" / "frames" / "targets.json").read_text())
+    have = {(p, str(d), int(r["cell"])) for p, dd in targets.items() for d, rows in dd.items() for r in rows
+            if (ROOT / "data" / "frames" / f"{p}_{d}_M10" / f"frame_{r['frame']}.raw").exists()}
+    q = q[[(r.patient, str(r.date), int(r.cell)) in have for r in q.itertuples()]].copy()
+    pats = sorted(q.patient.unique())
+    per = {p: n_total // len(pats) for p in pats}
+    for p in pats[: n_total - per[pats[0]] * len(pats)]: per[p] += 1
+    picks = []
+    for p in pats:
+        sub = q[q.patient == p]
+        want = per[p]
+        chosen = []
+        for health, grp in sub.groupby("health"):
+            grp = grp.sort_values("confidence")
+            k = max(1, round(want * len(grp) / len(sub)))
+            idx = np.linspace(0, len(grp) - 1, min(k, len(grp))).round().astype(int)
+            chosen.append(grp.iloc[sorted(set(idx))])
+        got = pd.concat(chosen)
+        if len(got) > want: got = got.sort_values("confidence").iloc[np.linspace(0, len(got) - 1, want).round().astype(int)]
+        picks.append(got)
+    return pd.concat(picks).sort_values(["patient", "confidence"]).reset_index(drop=True)
+
+
+def spicule_flag(text: str):
+    t = (text or "").lower()
+    if "no spicule" in t or "without spicule" in t or "no visible spicule" in t: return 0
+    return 1 if "spicule" in t else None
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--cells", type=int, default=30)
+    ap.add_argument("--max-new-calls", type=int, default=110)
+    ap.add_argument("--dry-run", action="store_true", help="list selection + cache status, make no calls")
+    args = ap.parse_args()
+    cells = stratified_cells(args.cells)
+    print(f"stratified cells: {len(cells)} " + str(cells.groupby(['patient', 'health']).size().to_dict()))
+    new_calls = [0]
+    def spend_guard(kind):
+        new_calls[0] += 1
+        if new_calls[0] > args.max_new_calls:
+            raise SystemExit(f"SPEND GUARD: exceeded --max-new-calls={args.max_new_calls} at {kind}; rerun to resume from cache")
+    cell_rows = []
+    for q in cells.itertuples():
+        got = server.frame_png(q.patient, str(q.date), int(q.cell), crop=True)
+        if got is None:
+            cell_rows.append({"patient": q.patient, "date": str(q.date), "visit": q.visit, "cell": int(q.cell),
+                              "author_health": int(q.health), "pred": int(q.pred), "sam_status": "NO_FRAME"})
+            continue
+        png, info = got
+        poly = info.get("contour_crop_fullres") or info.get("contour_crop")
+        if args.dry_run:
+            print(" would call SAM+Spark:", q.patient, q.date, q.cell); continue
+        before = len(list(meta_api.CACHE.glob("*.json"))) if meta_api.CACHE.exists() else 0
+        sam = meta_api.sam_segment(png, author_poly=poly, wh=(200, 40))
+        if sam.get("_cache") == "miss": spend_guard("sam")
+        spark = meta_api.spark_visual_check(png)
+        if spark.get("_cache") == "miss": spend_guard("spark-visual")
+        flag = spicule_flag(spark.get("text", "")) if spark.get("status") == "OK" else None
+        cell_rows.append({"patient": q.patient, "date": str(q.date), "visit": q.visit, "cell": int(q.cell),
+                          "author_health": int(q.health), "pred": int(q.pred), "confidence": float(q.confidence),
+                          "sam_status": sam.get("status"), "sam_detail": (sam.get("detail") or "")[:200], "sam_iou": sam.get("iou_vs_author"),
+                          "sam_mode": sam.get("prompt_mode"), "sam_cache": sam.get("_cache"),
+                          "spark_status": spark.get("status"), "spark_cache": spark.get("_cache"),
+                          "spark_spicule": flag,
+                          "spark_agrees_author": (flag == int(q.health)) if flag is not None else None,
+                          "spark_text": (spark.get("text") or spark.get("detail") or "")[:280]})
+        print(f" cell {q.patient}/{q.date}/c{q.cell}: SAM {sam.get('status')} IoU={sam.get('iou_vs_author')} ({sam.get('_cache')}) "
+              f"Spark {spark.get('status')} ({spark.get('_cache')})")
+    pair_rows = []
+    dec = pd.read_csv(TABLES / "visit_pairs_decisions_v2.csv")
+    for r in dec.to_dict("records"):
+        env = checker.sign_payload(checker.build_payload(r["patient"], r["from"], r["to"]))
+        payload = env["payload"]
+        if args.dry_run:
+            print(" would call Spark+Baseten:", payload["patient"], payload["from_visit"], payload["to_visit"]); continue
+        spark = meta_api.spark_narrative(payload)
+        if spark.get("_cache") == "miss": spend_guard("spark-narrative")
+        narrative, nsrc = "Flow standardized change assessed against the combined noise band.", "template"
+        if spark.get("status") == "OK" and spark.get("text") and not any(c.isdigit() for c in spark["text"]):
+            narrative, nsrc = spark["text"].strip(), "muse-spark-1.3"
+        report = checker.render_report(env, narrative)
+        ok, errs = checker.verify_envelope(env)
+        aok, aerrs = checker.audit_report(report, env)
+        ow = meta_api.baseten_audit(report, payload)
+        if ow.get("_cache") == "miss" and ow.get("status") != "BLOCKED": spend_guard("baseten")
+        local_verdict = "PASS" if (ok and aok) else "BLOCK"
+        ow_verdict = ow.get("status")
+        pair_rows.append({"patient": payload["patient"], "from": payload["from_visit"], "to": payload["to_visit"],
+                          "decision": payload["decision"], "checker_verified": bool(ok), "local_audit": local_verdict,
+                          "narrative_source": nsrc, "spark_cache": spark.get("_cache"),
+                          "open_weight_status": ow_verdict, "open_weight_model": ow.get("model"),
+                          "open_weight_cache": ow.get("_cache"), "parity": (ow_verdict == local_verdict),
+                          "open_weight_detail": (ow.get("detail") or "")[:200]})
+        print(f" pair {payload['patient']} {payload['from_visit']}->{payload['to_visit']}: local={local_verdict} open={ow_verdict} parity={ow_verdict == local_verdict}")
+    if args.dry_run:
+        print("DRY RUN: no calls made"); return
+    cdf, pdf = pd.DataFrame(cell_rows), pd.DataFrame(pair_rows)
+    cdf.to_csv(TABLES / "live_benchmark_cells.csv", index=False)
+    pdf.to_csv(TABLES / "live_benchmark_pairs.csv", index=False)
+    ious = cdf.loc[cdf.sam_status == "OK", "sam_iou"].dropna()
+    agree = cdf.loc[cdf.spark_agrees_author.notna(), "spark_agrees_author"]
+    summary = {"cells_n": int(len(cdf)), "sam_ok": int((cdf.sam_status == "OK").sum()),
+               "sam_iou_mean": round(float(ious.mean()), 3) if len(ious) else None,
+               "sam_iou_median": round(float(ious.median()), 3) if len(ious) else None,
+               "sam_iou_min": round(float(ious.min()), 3) if len(ious) else None,
+               "sam_iou_max": round(float(ious.max()), 3) if len(ious) else None,
+               "sam_iou_ge80_frac": round(float((ious >= 0.8).mean()), 3) if len(ious) else None,
+               "spark_ok": int((cdf.spark_status == "OK").sum()),
+               "spark_author_agreement": round(float(agree.mean()), 3) if len(agree) else None,
+               "spark_author_n": int(len(agree)),
+               "pairs_n": int(len(pdf)), "parity_n": int(pdf.parity.sum()) if len(pdf) else 0,
+               "new_api_calls": int(new_calls[0]),
+               "models": {"sam": "sam-3.1", "cloud": "muse-spark-1.3", "open_weight": "meta-models/muse-spark-open (Baseten)"}}
+    (TABLES / "live_benchmark_summary.json").write_text(json.dumps(summary, indent=1), encoding="utf-8")
+    lines = ["# Live Multi-Model Benchmark (cached, real data)", "",
+             f"Cells: {summary['cells_n']} stratified queue cells across P1/P2/P4 with real frames. "
+             f"SAM 3.1 OK {summary['sam_ok']}/{summary['cells_n']}; IoU vs author contour mean {summary['sam_iou_mean']}, "
+             f"median {summary['sam_iou_median']}, range {summary['sam_iou_min']}-{summary['sam_iou_max']}, "
+             f"fraction >= 0.80: {summary['sam_iou_ge80_frac']}.", "",
+             f"Muse Spark 1.3 visual check OK {summary['spark_ok']}/{summary['cells_n']}; spicule-keyword vs author-health "
+             f"agreement {summary['spark_author_agreement']} (n={summary['spark_author_n']}, keyword heuristic on free text, not a label).", "",
+             f"Visit pairs: {summary['pairs_n']}. Cloud narrative (muse-spark-1.3, digit-free enforced) + Checker/local audit vs "
+             f"Baseten open-weight audit parity: {summary['parity_n']}/{summary['pairs_n']}.", "",
+             f"New (uncached) API calls this run: {summary['new_api_calls']}. All calls cached in data/api_cache/; reruns are free. "
+             "Failures, if any, are recorded as BLOCKED in the CSVs — never replaced with fabricated passes.", "",
+             "Detail: data/tables/live_benchmark_cells.csv, data/tables/live_benchmark_pairs.csv. "
+             "Reproduce: `uv run python src/run_live_benchmark.py` (cache hits make it $0)."]
+    (DOCS / "LIVE_BENCHMARK.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(json.dumps(summary, indent=1))
+    print("wrote docs/LIVE_BENCHMARK.md")
+
+
+if __name__ == "__main__":
+    main()

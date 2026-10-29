@@ -67,8 +67,10 @@ def sam_segment(png_bytes, author_poly=None, wh=(200, 40)):
     key = os.environ.get("META_MODEL_API_KEY") or os.environ.get("MODEL_API_KEY")
     if not key: return {"status": "BLOCKED", "detail": "META_MODEL_API_KEY not set"}
     img_hash = hashlib.sha256(png_bytes).hexdigest()
+    if png_bytes[:8] == b"\x89PNG\r\n\x1a\n":  # true media size (crops are 200x48, not 200x40)
+        wh = (int.from_bytes(png_bytes[16:20], "big"), int.from_bytes(png_bytes[20:24], "big"))
     CACHE.mkdir(parents=True, exist_ok=True)
-    ck = _key("sam-3.1", [{"img": img_hash, "author": author_poly}], extra="responses-v1")
+    ck = _key("sam-3.1", [{"img": img_hash, "author": author_poly}], extra="responses-v2")
     hit = CACHE / f"{ck}.json"
     if hit.exists():
         out = json.loads(hit.read_text()); out["_cache"] = "hit"; return out
@@ -133,6 +135,13 @@ def _sam_run(key, png_bytes, author_poly, wh):
                                    "output_index": data.get("output_index"), "content_index": data.get("content_index"),
                                    "text": part["text"]})
         return events
+    def run_sync(prompt_text):
+        # Selector loop: Proactor's self-pipe socketpair is blocked in sandboxes (WinError 10013).
+        loop = asyncio.SelectorEventLoop()
+        try:
+            return loop.run_until_complete(run(prompt_text))
+        finally:
+            loop.close()
     async def run(prompt_text):
         events = fetch_events(prompt_text)
         async def agen():
@@ -150,13 +159,13 @@ def _sam_run(key, png_bytes, author_poly, wh):
             except Exception:
                 continue
         return recs
-    result = asyncio.run(run("red blood cell"))
+    result = run_sync("red blood cell")
     recs, mode = records_of(result), "concept:red blood cell"
     if not recs and author_poly:
         xs = [p[0] for p in author_poly]; ys = [p[1] for p in author_poly]
         prompt = build_object_prompt(size=(w, h), objects=[PromptObject(id="1", prompts=[
             FramePrompt(frame=0, box=PromptBox(left=int(min(xs)), top=int(min(ys)), right=int(max(xs)), bottom=int(max(ys))))])])
-        result = asyncio.run(run(prompt))
+        result = run_sync(prompt)
         recs, mode = records_of(result), "box-prompt(author box)"
     if not recs:
         return {"status": "BLOCKED", "detail": f"sam-3.1 returned zero masks ({mode})", "prompt_mode": mode}
@@ -218,6 +227,58 @@ def baseten_audit(report, payload):
                     "model": model, "detail": txt[:300], "_cache": r["_cache"]}
     return r
 
+VOICE_MODEL = os.environ.get("META_VOICE_MODEL", "muse-voice-transcribe-1.0")  # alias: muse-voice-transcribe
+VOICE_URL = META_BASE.rstrip("/") + "/asr/transcribe"
+VOICE_MODES = ("PUSH_TO_TALK", "ENDPOINTING", "DIARIZATION")
+
+def make_sample_wav(path, seconds=1.6, rate=24000):
+    """Synthesized sample review clip (formant-like sweep + pauses, no real speech). 24 kHz mono 16-bit WAV."""
+    import math, wave as _wave
+    path = Path(path); path.parent.mkdir(parents=True, exist_ok=True)
+    frames = bytearray()
+    for i in range(int(seconds * rate)):
+        t = i / rate
+        seg = 0.6 * math.sin(2 * math.pi * (180 + 90 * math.sin(2 * math.pi * 1.4 * t)) * t) \
+            * (0.25 + 0.75 * abs(math.sin(math.pi * t / 0.4))) if (t % 0.5) < 0.38 else 0.0
+        v = max(-32767, min(32767, int(seg * 9000)))
+        frames += int(v).to_bytes(2, "little", signed=True)
+    with _wave.open(str(path), "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(rate); w.writeframes(bytes(frames))
+    return path
+
+def _post_multipart(url, key, body, ctype, timeout=120):
+    req = urllib.request.Request(url, data=body, headers={"Authorization": f"Bearer {key}", "Content-Type": ctype})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.loads(r.read().decode())
+
+def transcribe_audio(wav_bytes, mode="PUSH_TO_TALK", filename="review.wav"):
+    """Muse Voice Transcribe (POST /v1/asr/transcribe, multipart request-JSON + audio). Cached by audio hash.
+    Returns {status: OK, text, turns, audio_ms} or BLOCKED with the real error — never a fabricated transcript."""
+    load_env()
+    key = os.environ.get("META_MODEL_API_KEY") or os.environ.get("MODEL_API_KEY")
+    if not key: return {"status": "BLOCKED", "detail": "META_MODEL_API_KEY not set"}
+    if mode not in VOICE_MODES: return {"status": "BLOCKED", "detail": f"unknown mode {mode!r} (server ignores bad modes)"}
+    CACHE.mkdir(parents=True, exist_ok=True)
+    ck = _key(VOICE_MODEL, [{"audio": hashlib.sha256(wav_bytes).hexdigest(), "mode": mode}], extra="asr-v1")
+    hit = CACHE / f"{ck}.json"
+    if hit.exists():
+        out = json.loads(hit.read_text()); out["_cache"] = "hit"; return out
+    boundary = "----helpchoreai-voice-boundary"
+    req_json = json.dumps({"mode": mode, "model": VOICE_MODEL, "audioEncoding": "WAV"})
+    body = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"request\"\r\nContent-Type: application/json\r\n\r\n{req_json}\r\n"
+            f"--{boundary}\r\nContent-Disposition: form-data; name=\"audio\"; filename=\"{filename}\"\r\n"
+            f"Content-Type: audio/wav\r\n\r\n").encode() + wav_bytes + f"\r\n--{boundary}--\r\n".encode()
+    try:
+        resp = _post_multipart(VOICE_URL, key, body, f"multipart/form-data; boundary={boundary}")
+        text = resp.get("transcript") or " ".join(t.get("transcript", "") for t in resp.get("turns", [])).strip()
+        out = {"status": "OK", "model": VOICE_MODEL, "text": text, "turns": resp.get("turns"),
+               "audio_ms": resp.get("audioDurationMs"), "session_id": resp.get("sessionId")}
+    except Exception as e:
+        out = {"status": "BLOCKED", "detail": f"{type(e).__name__}: {e}"}
+    if out.get("status") == "OK":
+        hit.write_text(json.dumps(out, indent=1))
+    return out | {"_cache": "miss"}
+
 def polygon_iou(poly_a, poly_b, w, h):
     """Raster IoU on a w x h grid (numpy, point-in-polygon via ray casting on pixel centers)."""
     import numpy as np
@@ -234,3 +295,14 @@ def polygon_iou(poly_a, poly_b, w, h):
     a, b = mask(poly_a), mask(poly_b)
     union = (a | b).sum()
     return float((a & b).sum() / union) if union else 0.0
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) >= 3 and sys.argv[1] == "make-sample-wav":
+        print(make_sample_wav(sys.argv[2]))
+    elif len(sys.argv) >= 3 and sys.argv[1] == "transcribe":
+        wav = Path(sys.argv[2]).read_bytes()
+        mode = sys.argv[3] if len(sys.argv) > 3 else "PUSH_TO_TALK"
+        print(json.dumps(transcribe_audio(wav, mode=mode, filename=Path(sys.argv[2]).name), indent=1))
+    else:
+        print("usage: meta_api.py make-sample-wav <out.wav> | transcribe <in.wav> [MODE]")

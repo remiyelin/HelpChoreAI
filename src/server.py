@@ -94,6 +94,7 @@ def frame_png(patient, date, cell, crop=True):
 def live_status():
     return {"sam_3_1": "LIVE" if os.environ.get("META_MODEL_API_KEY") else "OFFLINE (set META_MODEL_API_KEY)",
             "muse_spark_cloud": "LIVE" if os.environ.get("META_MODEL_API_KEY") else "OFFLINE (set META_MODEL_API_KEY)",
+            "muse_voice_transcribe": "LIVE" if os.environ.get("META_MODEL_API_KEY") else "OFFLINE (set META_MODEL_API_KEY)",
             "open_weight_auditor": "LIVE" if os.environ.get("BASETEN_API_KEY") else "OFFLINE (set BASETEN_API_KEY)",
             "open_weight_model": "meta-models/muse-spark-open-1026 via Baseten"}
 
@@ -125,6 +126,9 @@ class H(BaseHTTPRequestHandler):
         path = self.path.split("?")[0]
         try:
             if path == "/api/meta": return self.send_json({"live": live_status(), "dataset": checker.DATASET_DOI})
+            if path == "/api/benchmark":
+                f = TABLES / "live_benchmark_summary.json"
+                return self.send_json(json.loads(f.read_text()) if f.exists() else {"status": "NOT_RUN", "detail": "run: uv run python src/run_live_benchmark.py"})
             if path == "/api/visits": return self.send_json(pd.read_csv(TABLES / "per_visit_adjusted_v2.csv").to_dict("records"))
             if path == "/api/pairs": return self.send_json(pd.read_csv(TABLES / "visit_pairs_decisions_v2.csv").to_dict("records"))
             if path == "/api/queue":
@@ -216,6 +220,21 @@ class H(BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.get("Content-Length", 0))
         body = json.loads(self.rfile.read(length) or b"{}")
+        if self.path == "/api/transcribe":
+            import base64 as _b64
+            try:
+                wav = _b64.b64decode(body.get("audio_b64", ""), validate=True)
+            except Exception as e:
+                return self.send_json({"status": "BLOCKED", "detail": f"invalid audio_b64: {e}"})
+            if not wav: return self.send_json({"status": "BLOCKED", "detail": "empty audio"})
+            return self.send_json(meta_api.transcribe_audio(wav, mode=body.get("mode", "PUSH_TO_TALK")))
+        if self.path == "/api/signoff":
+            f = ROOT / "data" / "signoffs.json"
+            rows = json.loads(f.read_text()) if f.exists() else []
+            rows.append({"patient": body.get("patient"), "from": body.get("from"), "to": body.get("to"),
+                         "decision": body.get("decision"), "note": body.get("note", "")})
+            f.write_text(json.dumps(rows, indent=1))
+            return self.send_json({"saved": True, "signoffs": len(rows)})
         if self.path == "/api/review":
             rev = json.loads(REVIEWS.read_text()) if REVIEWS.exists() else []
             rev = [r for r in rev if not (r["patient"] == body["patient"] and str(r["date"]) == str(body["date"]) and int(r["cell"]) == int(body["cell"]))]
