@@ -91,7 +91,17 @@ def frame_png(patient, date, cell, crop=True):
     pts = [[round(float(x), 1), round(float(y), 1)] for x, y in contour[::3]]
     return png_gray(img), {"frame": frame_no, "pos_x": round(pos_x, 1), "contour_full": pts}
 
+def public_mode():
+    return os.environ.get("PUBLIC_MODE") == "1"
+
+STATIC_ALLOWLIST = {"/": ("index.html", "text/html"), "/index.html": ("index.html", "text/html"),
+                    "/app.js": ("app.js", "text/javascript"), "/style.css": ("style.css", "text/css")}
+
 def live_status():
+    if public_mode():
+        return {"sam_3_1": "CACHED DEMO", "muse_spark_cloud": "CACHED DEMO",
+                "muse_voice_transcribe": "CACHED DEMO", "open_weight_auditor": "CACHED DEMO",
+                "open_weight_model": "CACHED DEMO"}
     return {"sam_3_1": "LIVE" if os.environ.get("META_MODEL_API_KEY") else "OFFLINE (set META_MODEL_API_KEY)",
             "muse_spark_cloud": "LIVE" if os.environ.get("META_MODEL_API_KEY") else "OFFLINE (set META_MODEL_API_KEY)",
             "muse_voice_transcribe": "LIVE" if os.environ.get("META_MODEL_API_KEY") else "OFFLINE (set META_MODEL_API_KEY)",
@@ -205,21 +215,32 @@ class H(BaseHTTPRequestHandler):
                                        "audit_ok": aok, "audit_errors": aerrs, "narrative_source": nsrc,
                                        "cloud": {"model": "muse-spark-1.3", "narrative_source": nsrc, "checker_verified": ok},
                                        "open_weight": ow})
-            if path == "/" or path == "/index.html":
-                b = (WEB / "index.html").read_bytes(); self.send_response(200)
-                self.send_header("Content-Type", "text/html"); self.send_header("Content-Length", str(len(b)))
-                self.end_headers(); self.wfile.write(b); return
-            fp = WEB / path.lstrip("/")
-            if fp.exists() and fp.is_file():
-                b = fp.read_bytes(); ct = "text/javascript" if fp.suffix == ".js" else "text/css"
-                self.send_response(200); self.send_header("Content-Type", ct); self.send_header("Content-Length", str(len(b)))
+            if path in STATIC_ALLOWLIST:
+                name, ct = STATIC_ALLOWLIST[path]
+                b = (WEB / name).read_bytes(); self.send_response(200)
+                self.send_header("Content-Type", ct); self.send_header("Content-Length", str(len(b)))
                 self.end_headers(); self.wfile.write(b); return
             return self.send_json({"error": "not found"}, 404)
         except Exception as e:
             return self.send_json({"error": f"{type(e).__name__}: {e}"}, 500)
     def do_POST(self):
-        length = int(self.headers.get("Content-Length", 0))
-        body = json.loads(self.rfile.read(length) or b"{}")
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length) or b"{}")
+            if not isinstance(body, dict): raise ValueError("JSON body must be an object")
+        except Exception as e:
+            return self.send_json({"error": f"malformed request body: {type(e).__name__}: {e}"}, 400)
+        try:
+            return self._post(body)
+        except KeyError as e:
+            return self.send_json({"error": f"missing field: {e}"}, 400)
+        except (ValueError, TypeError) as e:
+            return self.send_json({"error": f"invalid field: {type(e).__name__}: {e}"}, 400)
+        except Exception as e:
+            return self.send_json({"error": f"{type(e).__name__}: {e}"}, 500)
+    def _post(self, body):
+        if public_mode() and self.path in ("/api/review", "/api/signoff", "/api/transcribe"):
+            return self.send_json({"error": "PUBLIC_MODE: this endpoint is disabled in the read-only demo"}, 403)
         if self.path == "/api/transcribe":
             import base64 as _b64
             try:

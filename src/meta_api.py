@@ -24,12 +24,17 @@ def _post(url, key, body, timeout=60):
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return json.loads(r.read().decode())
 
+def _public():
+    return os.environ.get("PUBLIC_MODE") == "1"
+
 def chat_cached(base_url, api_key, model, messages, extra=""):
     CACHE.mkdir(parents=True, exist_ok=True)
     ck = _key(model, messages, extra)
     hit = CACHE / f"{ck}.json"
     if hit.exists():
         out = json.loads(hit.read_text()); out["_cache"] = "hit"; return out
+    if _public():
+        return {"status": "CACHE_ONLY", "detail": "PUBLIC_MODE: live calls disabled and no cached result", "_cache": "miss"}
     if not api_key:
         return {"status": "BLOCKED", "detail": "API key not set", "_cache": "miss"}
     try:
@@ -65,7 +70,6 @@ def sam_segment(png_bytes, author_poly=None, wh=(200, 40)):
     Returns mask polygon in crop coords + raster IoU vs author polygon when provided."""
     load_env()
     key = os.environ.get("META_MODEL_API_KEY") or os.environ.get("MODEL_API_KEY")
-    if not key: return {"status": "BLOCKED", "detail": "META_MODEL_API_KEY not set"}
     img_hash = hashlib.sha256(png_bytes).hexdigest()
     if png_bytes[:8] == b"\x89PNG\r\n\x1a\n":  # true media size (crops are 200x48, not 200x40)
         wh = (int.from_bytes(png_bytes[16:20], "big"), int.from_bytes(png_bytes[20:24], "big"))
@@ -74,6 +78,9 @@ def sam_segment(png_bytes, author_poly=None, wh=(200, 40)):
     hit = CACHE / f"{ck}.json"
     if hit.exists():
         out = json.loads(hit.read_text()); out["_cache"] = "hit"; return out
+    if _public():
+        return {"status": "CACHE_ONLY", "detail": "PUBLIC_MODE: live calls disabled and no cached result", "_cache": "miss"}
+    if not key: return {"status": "BLOCKED", "detail": "META_MODEL_API_KEY not set"}
     try:
         out = _sam_run(key, png_bytes, author_poly, wh)
     except Exception as e:
@@ -263,6 +270,8 @@ def transcribe_audio(wav_bytes, mode="PUSH_TO_TALK", filename="review.wav"):
     hit = CACHE / f"{ck}.json"
     if hit.exists():
         out = json.loads(hit.read_text()); out["_cache"] = "hit"; return out
+    if _public():
+        return {"status": "CACHE_ONLY", "detail": "PUBLIC_MODE: live calls disabled and no cached result", "_cache": "miss"}
     boundary = "----helpchoreai-voice-boundary"
     req_json = json.dumps({"mode": mode, "model": VOICE_MODEL, "audioEncoding": "WAV"})
     body = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"request\"\r\nContent-Type: application/json\r\n\r\n{req_json}\r\n"

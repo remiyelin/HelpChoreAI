@@ -7,11 +7,13 @@ Deploy:
   uv run --with modal modal deploy modal_app.py
 Then open the printed https://<user>--helpchoreai-web.modal.run URL.
 
-Secrets: create a Modal secret named "helpchoreai-keys" (dashboard or CLI) with
-META_MODEL_API_KEY / BASETEN_API_KEY, or leave unset — the app still runs fully
-on pre-extracted tables/frames and reports live calls as BLOCKED.
+Public by default: PUBLIC_MODE=1 (read-only cached demo, no live calls, write
+endpoints disabled). Keys are attached ONLY when DEPLOY_WITH_KEYS=1 is set
+explicitly at deploy time: create a Modal secret named "helpchoreai-keys"
+(dashboard or CLI) with META_MODEL_API_KEY / BASETEN_API_KEY.
 The Checker private key is generated inside the container on first run (demo key).
 """
+import os
 import pathlib
 import modal
 
@@ -31,15 +33,12 @@ image = (
     .add_local_dir(ROOT / "data" / "dev", "/root/HelpChoreAI/data/dev")
 )
 
-try:
-    keys = modal.Secret.from_name("helpchoreai-keys")
-    secrets = [keys]
-except Exception:
-    secrets = []
+secrets = [modal.Secret.from_name("helpchoreai-keys")] if os.environ.get("DEPLOY_WITH_KEYS") == "1" else []
 
 @app.function(image=image, secrets=secrets, cpu=2, memory=2048, timeout=600)
 @modal.web_server(8765, startup_timeout=120)
 def web():
     import subprocess, sys
+    os.environ.setdefault("PUBLIC_MODE", "1")  # read-only cached demo unless explicitly overridden at deploy
     subprocess.Popen([sys.executable, "/root/HelpChoreAI/src/server.py", "--port", "8765"],
-                     cwd="/root/HelpChoreAI")
+                     cwd="/root/HelpChoreAI", env=os.environ.copy())
