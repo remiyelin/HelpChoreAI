@@ -104,19 +104,38 @@ def main():
     df.to_csv(ROOT / "data" / "tables" / "cell_pixel_features.csv", index=False)
     d = df.dropna().copy()
     print(f"STEP3B queue cells with real crop + pixel feats: {len(df)} (skipped {skipped}); usable after dropna: {len(d)}")
-    for name, cols in [("BASE (area/circ/axis/frames)", BASE_FEATS),
-                       ("BASE+CONTOUR (rough/solid)", BASE_FEATS + CONTOUR_FEATS),
+    rng = np.random.default_rng(42)
+    for name, cols in [("BASE (contour-area/circ/axis/frames)", BASE_FEATS),
                        ("PIXEL ONLY", PIXEL_FEATS),
-                       ("BASE+CONTOUR+PIXEL", BASE_FEATS + CONTOUR_FEATS + PIXEL_FEATS)]:
-        kaps, accs = [], []
+                       ("BASE+PIXEL", BASE_FEATS + PIXEL_FEATS)]:
+        oof = {}  # patient -> (y_true, y_pred) out-of-fold
         for test_p in sorted(d.patient.unique()):
             tr, te = d[d.patient != test_p], d[d.patient == test_p]
             clf = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000, class_weight="balanced"))
             clf.fit(tr[cols], tr.health); pred = clf.predict(te[cols])
-            kaps.append(cohen_kappa_score(te.health, pred)); accs.append(balanced_accuracy_score(te.health, pred))
-        print(f"{name}: LOPO kappa per patient={np.round(kaps, 3)} mean={np.mean(kaps):.3f} | bal_acc mean={np.mean(accs):.3f}")
-    print("Reference: contour-only baseline LOPO kappa mean 0.243 (Step 3 contour check). "
-          "Classifier remains triage/prioritization only, never ground truth.")
+            oof[test_p] = (te.health.to_numpy(), np.asarray(pred))
+        kaps = []
+        print(f"{name}:")
+        for p in sorted(oof):
+            y, pr = oof[p]
+            stats = server.kappa_ac1(y, pr)  # Cohen kappa + Gwet AC1, same formulas as the UI
+            pabak = 2 * float((y == pr).mean()) - 1
+            kaps.append(stats["kappa"])
+            print(f"  held-out {p}: kappa={stats['kappa']:.3f} AC1={stats['ac1']:.3f} PABAK={pabak:.3f} "
+                  f"bal_acc={balanced_accuracy_score(y, pr):.3f} n={len(y)}")
+        # Bootstrap 95% CI for mean kappa: resample cells within each held-out patient (B=1000, seed 42).
+        boots = []
+        for _ in range(1000):
+            bk = []
+            for p in sorted(oof):
+                y, pr = oof[p]; idx = rng.integers(0, len(y), len(y))
+                if len(np.unique(y[idx])) < 2 or len(np.unique(pr[idx])) < 2: continue
+                bk.append(cohen_kappa_score(y[idx], pr[idx]))
+            if len(bk) == len(oof): boots.append(float(np.mean(bk)))
+        lo, hi = np.percentile(boots, [2.5, 97.5])
+        print(f"  MEAN kappa={np.mean(kaps):.3f} bootstrap95CI=[{lo:.3f}, {hi:.3f}] (B={len(boots)})")
+    print("Classifier remains triage/prioritization only, never ground truth. "
+          "BASE area is now contour shoelace (the pickle Area field is misaligned by the authors' tracker bug).")
 
 
 if __name__ == "__main__":

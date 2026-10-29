@@ -19,6 +19,22 @@ DEV, OUT = ROOT / "data" / "dev", ROOT / "data" / "tables"
 DEFORMED = {1, 2, 3, 5, 7}
 REF_FLOW = 0.016
 
+def shoelace_area(contour):
+    """Polygon area of one frame contour (same quantity as cv2.contourArea on the hull)."""
+    pts = np.asarray(contour, dtype=float)
+    if pts.ndim != 2 or len(pts) < 3: return np.nan
+    x, y = pts[:, 0], pts[:, 1]
+    return float(abs(np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y)) / 2)
+
+def contour_area_mean_std(obj, i):
+    """Per-cell area mean/std from contour shoelace. NOT the pickle 'Area' field: the authors'
+    tracker appends Area twice per frame with 2+ cells (vendor Cell_tracking_new.py:293-294)
+    and then indexes the doubled list by single-cell sort order (line 304), misaligning it."""
+    vals = [shoelace_area(c) for c in obj["Contours"][i]]
+    vals = [v for v in vals if np.isfinite(v)]
+    if not vals: return np.nan, np.nan
+    return float(np.mean(vals)), float(np.std(vals))
+
 def load_cells():
     rows = []
     for pkl in sorted(DEV.rglob("*Offline__M10_results.p")):
@@ -37,7 +53,7 @@ def load_cells():
         for i in range(n):
             def ms(k):
                 a = np.asarray(obj[k][i], dtype=float); return float(np.nanmean(a)), float(np.nanstd(a))
-            am, asd = ms("Area"); cm, csd = ms("circularity")
+            am, asd = contour_area_mean_std(obj, i); cm, csd = ms("circularity")
             xm, _ = ms("x_ax"); ym, _ = ms("y_ax")
             s, h = labels[i]
             rows.append({"patient": patient, "date": date, "visit": visit, "cell": i, "shape_code": s, "health": h,
