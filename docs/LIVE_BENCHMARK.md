@@ -2,7 +2,7 @@
 
 Cells: 30 stratified queue cells across P1/P2/P4 with real frames. SAM 3.1 OK 30/30; IoU vs author contour mean 0.82, median 0.825, range 0.693-0.916, fraction >= 0.80: 0.667. Median SAM/author mask-area ratio: 0.829. Note: the author contour is a convex hull that can include MOG2 shadow pixels, so IoU < 1 even for a perfect mask; cached masks predate the PromptBox half-open (+1 px) fix, which applies to future calls only.
 
-Muse Spark 1.3 visual check OK 30/30; spicule-keyword vs author-health agreement 0.429 (n=21, keyword heuristic on free text, not a label).
+Muse Spark 1.3 visual check OK 30/30 (free-text descriptions retained in the CSV only; keyword scoring of them was invalid and has been removed — structured second-rater results: docs/RATERS.md).
 
 Visit pairs: 21. Cloud narrative (muse-spark-1.3, digit-free enforced) + Checker/local audit vs Baseten open-weight audit parity: 21/21.
 
@@ -44,3 +44,11 @@ the cached masks above still carry the old box. Alignment check
 3-px ring in the served orientation for 50/50 cells (mean difference −19.0 vs −11.3
 grey levels unflipped; the sign fraction alone saturates because crops are
 cell-dominated, the effect size is the discriminating statistic).
+
+## Removed figure (P-05)
+
+An earlier version of this document and the UI reported "Spark vs author agreement
+0.429" from keyword-matching free-text descriptions. That figure was invalid: all 16
+texts scored as "spicules present" actually denied spicules, and no text affirmed
+them. It has been removed everywhere and replaced by the structured second-rater
+protocol in docs/RATERS.md (enforced JSON schema, cannot_tell kept separate).

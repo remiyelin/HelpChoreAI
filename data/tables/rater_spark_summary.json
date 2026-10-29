@@ -1,0 +1,42 @@
+{
+ "n_sample": 80,
+ "n_ok": 80,
+ "cannot_tell_share": 0.438,
+ "confusion": {
+  "tp": 8,
+  "fn": 9,
+  "fp": 6,
+  "tn": 22
+ },
+ "kappa": 0.266,
+ "kappa_ci95": [
+  -0.028,
+  0.545
+ ],
+ "ac1": 0.392,
+ "ac1_ci95": [
+  0.098,
+  0.664
+ ],
+ "pabak": 0.334,
+ "intra_rater": {
+  "n_pairs": 20,
+  "n_both_rated": 11,
+  "raw_agreement_3way": 0.75,
+  "kappa": 0.389,
+  "ac1": 0.741
+ },
+ "median_spicule_points_by_author": {
+  "0": 0.0,
+  "1": 0.0
+ },
+ "new_api_calls": 100,
+ "examples": [
+  "docs/media/rater_example_1.png (P2 cell 23: yes, author 1)",
+  "docs/media/rater_example_2.png (P2 cell 1: yes, author 1)",
+  "docs/media/rater_example_3.png (P1 cell 42: yes, author 1)",
+  "docs/media/rater_example_4.png (P1 cell 20: yes, author 1)",
+  "docs/media/rater_example_5.png (P1 cell 91: no, author 0)",
+  "docs/media/rater_example_6.png (P1 cell 24: cannot_tell, author 0)"
+ ]
+}

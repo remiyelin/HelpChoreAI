@@ -7,8 +7,6 @@
  "sam_iou_max": 0.916,
  "sam_iou_ge80_frac": 0.667,
  "spark_ok": 30,
- "spark_author_agreement": 0.429,
- "spark_author_n": 21,
  "sam_area_ratio_median": 0.829,
  "pairs_n": 21,
  "parity_n": 21,

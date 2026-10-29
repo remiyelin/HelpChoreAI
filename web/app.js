@@ -20,7 +20,7 @@ async function init(){
 }
 async function loadBenchmark(){try{const b=await j('/api/benchmark');
  if(b.status==='NOT_RUN'){$('#benchmarkCard').innerHTML=`<b>Live multi-model benchmark:</b> not run yet — <span class="mono">uv run python src/run_live_benchmark.py</span>`;return}
- $('#benchmarkCard').innerHTML=`<b>Live multi-model benchmark</b> (cached real-data run, details in docs/LIVE_BENCHMARK.md)<br>SAM 3.1 IoU vs author: mean <b>${b.sam_iou_mean}</b> · median ${b.sam_iou_median} · range ${b.sam_iou_min}–${b.sam_iou_max} · ≥0.80: ${b.sam_iou_ge80_frac} (n=${b.sam_ok})<br>Muse Spark visual vs author agreement: <b>${b.spark_author_agreement}</b> (n=${b.spark_author_n}, keyword heuristic)<br>Cloud vs Open-Weight audit parity: <b>${b.parity_n}/${b.pairs_n} pairs</b>`;}catch(e){$('#benchmarkCard').textContent='Live benchmark: unavailable ('+e+')'}}
+ $('#benchmarkCard').innerHTML=`<b>Live multi-model benchmark</b> (cached real-data run, details in docs/LIVE_BENCHMARK.md)<br>SAM 3.1 IoU vs author: mean <b>${b.sam_iou_mean}</b> · median ${b.sam_iou_median} · range ${b.sam_iou_min}–${b.sam_iou_max} · ≥0.80: ${b.sam_iou_ge80_frac} (n=${b.sam_ok})<br>Structured Spark second rater: see docs/RATERS.md (keyword agreement figure removed as invalid)<br>Cloud vs Open-Weight audit parity: <b>${b.parity_n}/${b.pairs_n} pairs</b>`;}catch(e){$('#benchmarkCard').textContent='Live benchmark: unavailable ('+e+')'}}
 let recCtx=null,recBuf=[],recStream=null,recording=false;
 function wavEncode(chunks,sampleRate){let len=0;for(const c of chunks)len+=c.length;const buf=new Float32Array(len);let o=0;for(const c of chunks){buf.set(c,o);o+=c.length}
  const ds=Math.floor(sampleRate/16000)||1, n=Math.floor(buf.length/ds), pcm=new Int16Array(n);

@@ -208,6 +208,68 @@ def _sam_run(key, png_bytes, author_poly, wh):
     return {"status": "OK", "model": "sam-3.1", "prompt_mode": mode, "polygon": poly, "mask_rows": rows,
             "box": [rec["left"], rec["top"], rec["right"], rec["bottom"]], "records": len(recs)}
 
+RATER_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "properties": {
+        "spiculated": {"type": "string", "enum": ["yes", "no", "cannot_tell"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "spicule_points": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"frame": {"type": "integer"}, "x": {"type": "integer", "minimum": 0, "maximum": 1000},
+                           "y": {"type": "integer", "minimum": 0, "maximum": 1000}},
+            "required": ["frame", "x", "y"]}},
+        "image_quality": {"type": "string", "enum": ["ok", "poor"]},
+        "reason": {"type": "string"}},
+    "required": ["spiculated", "confidence", "spicule_points", "image_quality", "reason"]}
+
+RATER_PROMPT = ("You are a second rater for research microscopy. You are shown frames of the same red blood cell "
+    "in a microfluidic channel, each preceded by a short text id such as 'frame 1 of 3' and upscaled for "
+    "visibility. Judge ONLY visible morphology. A spiculated cell has distinct pointed protrusions (spicules) "
+    "on its outline. Set spiculated to yes if clear spicules are visible in any frame, no if the outline is "
+    "smooth in all frames, and cannot_tell if the images do not allow a judgement. confidence is your "
+    "probability that the spiculated judgement is correct. spicule_points lists the clearest spicule tips, "
+    "each with its frame number and x and y on a 0-1000 grid with 0,0 at the top-left of that frame image. "
+    "image_quality is poor if blur, darkness or artefacts prevent judgement. reason is at most 20 words, "
+    "morphology only. Reply with the JSON object only.")
+
+def spark_rater(png_list, repeat=0):
+    """Structured second-rater call: muse-spark-1.3, reasoning_effort=low, enforced json_schema.
+    Cached by image hashes + repeat index (repeats are distinct cache entries by design).
+    Returns the parsed rater dict, or BLOCKED/CACHE_ONLY — never a fabricated judgement."""
+    load_env()
+    key = os.environ.get("META_MODEL_API_KEY") or os.environ.get("MODEL_API_KEY")
+    hashes = [hashlib.sha256(p).hexdigest() for p in png_list]
+    CACHE.mkdir(parents=True, exist_ok=True)
+    ck = _key("muse-spark-1.3-rater", [{"imgs": hashes, "repeat": repeat, "prompt": RATER_PROMPT}], extra="rater-v1")
+    hit = CACHE / f"{ck}.json"
+    if hit.exists():
+        out = json.loads(hit.read_text()); out["_cache"] = "hit"; return out
+    if _public():
+        return {"status": "CACHE_ONLY", "detail": "PUBLIC_MODE: live calls disabled and no cached result", "_cache": "miss"}
+    if not key:
+        return {"status": "BLOCKED", "detail": "META_MODEL_API_KEY not set"}
+    content = [{"type": "text", "text": RATER_PROMPT}]
+    for i, png in enumerate(png_list):
+        content.append({"type": "text", "text": f"frame {i + 1} of {len(png_list)}"})
+        content.append({"type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.b64encode(png).decode()}})
+    body = {"model": "muse-spark-1.3", "reasoning_effort": "low",
+            "messages": [{"role": "user", "content": content}],
+            "response_format": {"type": "json_schema", "json_schema": {"name": "rbc_second_rater", "strict": True, "schema": RATER_SCHEMA}}}
+    try:
+        resp = _post(META_BASE.rstrip("/") + "/chat/completions", key, body, timeout=180)
+        text = resp.get("choices", [{}])[0].get("message", {}).get("content", "")
+        parsed = json.loads(text)
+        if set(parsed) != set(RATER_SCHEMA["required"]) or parsed["spiculated"] not in ("yes", "no", "cannot_tell"):
+            raise ValueError("schema-violating rater reply")
+        parsed["spicule_points"] = [{"frame": int(p["frame"]), "x": max(0, min(1000, int(p["x"]))),
+                                     "y": max(0, min(1000, int(p["y"])))} for p in parsed["spicule_points"]]
+        out = {"status": "OK", "model": "muse-spark-1.3", "rater": parsed, "raw_id": resp.get("id")}
+    except Exception as e:
+        out = {"status": "BLOCKED", "detail": f"{type(e).__name__}: {e}"}
+    if out.get("status") == "OK":
+        hit.write_text(json.dumps(out, indent=1))
+    return out | {"_cache": "miss"}
+
 def spark_visual_check(png_bytes):
     key = os.environ.get("META_MODEL_API_KEY")
     prompt = ("You are a research QC assistant. Look at this grayscale microfluidic red-blood-cell crop. "

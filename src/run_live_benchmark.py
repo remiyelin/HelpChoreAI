@@ -81,9 +81,11 @@ def save_overlays(cells_df, n=3):
 
 
 def spicule_flag(text: str):
-    t = (text or "").lower()
-    if "no spicule" in t or "without spicule" in t or "no visible spicule" in t: return 0
-    return 1 if "spicule" in t else None
+    # DELETED as a scoring method: the keyword heuristic scored negations ("no distinct
+    # spicules") as affirmations — all 16 "present" hits were denials. Structured
+    # second-rater protocol lives in src/rater_spark.py (docs/RATERS.md). Kept only as
+    # a tombstone; never use free-text keywords as a label.
+    return None
 
 
 def main():
@@ -115,7 +117,7 @@ def main():
         if sam.get("_cache") == "miss": spend_guard("sam")
         spark = meta_api.spark_visual_check(png)
         if spark.get("_cache") == "miss": spend_guard("spark-visual")
-        flag = spicule_flag(spark.get("text", "")) if spark.get("status") == "OK" else None
+        flag = None  # free-text keyword scoring deleted (invalid); see src/rater_spark.py
         # IoU + area ratio from geometry.py, recomputed here from the cached mask (never the stored number).
         iou_g, ratio_g = sam.get("iou_vs_author"), None
         if sam.get("status") == "OK" and poly:
@@ -131,8 +133,6 @@ def main():
                           "sam_area_ratio": ratio_g,
                           "sam_mode": sam.get("prompt_mode"), "sam_cache": sam.get("_cache"),
                           "spark_status": spark.get("status"), "spark_cache": spark.get("_cache"),
-                          "spark_spicule": flag,
-                          "spark_agrees_author": (flag == int(q.health)) if flag is not None else None,
                           "spark_text": (spark.get("text") or spark.get("detail") or "")[:280]})
         print(f" cell {q.patient}/{q.date}/c{q.cell}: SAM {sam.get('status')} IoU={sam.get('iou_vs_author')} ({sam.get('_cache')}) "
               f"Spark {spark.get('status')} ({spark.get('_cache')})")
@@ -168,7 +168,6 @@ def main():
     cdf.to_csv(TABLES / "live_benchmark_cells.csv", index=False)
     pdf.to_csv(TABLES / "live_benchmark_pairs.csv", index=False)
     ious = cdf.loc[cdf.sam_status == "OK", "sam_iou"].dropna()
-    agree = cdf.loc[cdf.spark_agrees_author.notna(), "spark_agrees_author"]
     summary = {"cells_n": int(len(cdf)), "sam_ok": int((cdf.sam_status == "OK").sum()),
                "sam_iou_mean": round(float(ious.mean()), 3) if len(ious) else None,
                "sam_iou_median": round(float(ious.median()), 3) if len(ious) else None,
@@ -176,8 +175,6 @@ def main():
                "sam_iou_max": round(float(ious.max()), 3) if len(ious) else None,
                "sam_iou_ge80_frac": round(float((ious >= 0.8).mean()), 3) if len(ious) else None,
                "spark_ok": int((cdf.spark_status == "OK").sum()),
-               "spark_author_agreement": round(float(agree.mean()), 3) if len(agree) else None,
-               "spark_author_n": int(len(agree)),
                "sam_area_ratio_median": round(float(cdf.loc[cdf.sam_status == "OK", "sam_area_ratio"].median()), 3) if len(cdf) and "sam_area_ratio" in cdf else None,
                "pairs_n": int(len(pdf)), "parity_n": int(pdf.parity.sum()) if len(pdf) else 0,
                "new_api_calls": int(new_calls[0]),
@@ -191,8 +188,9 @@ def main():
              f"fraction >= 0.80: {summary['sam_iou_ge80_frac']}. Median SAM/author mask-area ratio: {summary['sam_area_ratio_median']}. "
              "Note: the author contour is a convex hull that can include MOG2 shadow pixels, so IoU < 1 even for a perfect mask; "
              "cached masks predate the PromptBox half-open (+1 px) fix, which applies to future calls only.", "",
-             f"Muse Spark 1.3 visual check OK {summary['spark_ok']}/{summary['cells_n']}; spicule-keyword vs author-health "
-             f"agreement {summary['spark_author_agreement']} (n={summary['spark_author_n']}, keyword heuristic on free text, not a label).", "",
+             f"Muse Spark 1.3 visual check OK {summary['spark_ok']}/{summary['cells_n']} (free-text descriptions retained "
+             "in the CSV only; keyword scoring of them was invalid and has been removed — structured second-rater "
+             "results: docs/RATERS.md).", "",
              f"Visit pairs: {summary['pairs_n']}. Cloud narrative (muse-spark-1.3, digit-free enforced) + Checker/local audit vs "
              f"Baseten open-weight audit parity: {summary['parity_n']}/{summary['pairs_n']}.", "",
              f"New (uncached) API calls this run: {summary['new_api_calls']}. All calls cached in data/api_cache/; reruns are free. "

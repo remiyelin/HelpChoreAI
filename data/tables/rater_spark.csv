@@ -1,0 +1,101 @@
+patient,date,visit,cell,author_health,repeat,status,cache,n_frames_sent,track_frames,spiculated,confidence,spicule_points,image_quality,reason
+P1,20180705,53w,24,0,0,OK,miss,1,145,cannot_tell,0.4,[],poor,"Blurry dark cell with indistinct outline, possible point but unclear."
+P1,20170627,0w,119,0,0,OK,miss,1,112,yes,0.6,"[{""frame"": 1, ""x"": 660, ""y"": 700}]",ok,"Single sharp pointed tip at tapered end, otherwise smooth contour."
+P1,20180116,29w,24,0,0,OK,miss,1,180,cannot_tell,0.5,[],poor,"Too dark small blurry, outline indistinct for spicules"
+P1,20170809,6w,1,0,0,OK,miss,1,118,cannot_tell,0.4,[],poor,"Blurry deformed cell, outline indistinct, no clear pointed protrusions visible."
+P1,20171114,20w,91,0,0,OK,miss,1,159,no,0.65,[],ok,Smooth outline without distinct pointed protrusions.
+P1,20171114,20w,16,0,0,OK,miss,1,161,yes,0.6,"[{""frame"": 1, ""x"": 570, ""y"": 340}]",ok,Single sharp pointed protrusion at top of teardrop cell
+P1,20170711,2w,59,0,0,OK,miss,1,157,cannot_tell,0.6,[],poor,Blurry low-resolution outline no distinct protrusions visible
+P1,20170724,4w,61,0,0,OK,miss,1,125,cannot_tell,0.5,[],poor,Blurry small cell prevents confirming distinct pointed spicules.
+P1,20170724,4w,29,0,0,OK,miss,1,127,no,0.75,[],ok,"Smooth rounded outline without pointed protrusions, rear indentation only."
+P1,20170627,0w,133,0,0,OK,miss,1,109,cannot_tell,0.4,[],poor,single pointed taper visible but no distinct multiple spicules resolved
+P1,20171114,20w,93,0,0,OK,miss,1,155,cannot_tell,0.4,[],poor,Blurry low-resolution cell outline prevents spicule assessment
+P1,20170822,8w,12,0,0,OK,miss,1,150,no,0.65,[],ok,Round smooth outline with no pointed protrusions visible
+P1,20170627,0w,46,0,0,OK,miss,1,115,cannot_tell,0.7,[],poor,Small dark blurry oval; outline detail insufficient to exclude tiny spicules.
+P1,20170822,8w,26,0,0,OK,miss,1,135,no,0.75,[],ok,"Smooth oval-teardrop outline, single tapered pole, no multiple distinct spicules."
+P1,20170809,6w,54,0,0,OK,miss,1,130,no,0.8,[],ok,Smooth deformed outline without distinct pointed spicules.
+P1,20170822,8w,63,0,0,OK,miss,1,132,no,0.9,[],ok,"Round cell with smooth continuous outline, no pointed protrusions visible."
+P1,20170724,4w,55,0,0,OK,miss,1,132,no,0.85,[],ok,Smooth oval outline without pointed protrusions in sole frame.
+P1,20170724,4w,59,0,0,OK,miss,1,129,no,0.85,[],ok,"Smooth curved outline, no pointed protrusions visible."
+P2,20170905,8w,98,0,0,OK,miss,1,108,cannot_tell,0.4,[],poor,"Single blurry triangular cell, outline unclear for spicules"
+P2,20170905,8w,89,0,0,OK,miss,1,110,no,0.7,[],ok,Smooth oval outline without pointed protrusions.
+P2,20170822,6w,97,0,0,OK,miss,1,112,no,0.7,[],ok,Smooth deformed outline lacking distinct pointed spicules.
+P2,20170711,0w,94,0,0,OK,miss,1,128,cannot_tell,0.5,[],poor,Cell too small blurred outline prevents spicule assessment
+P2,20171114,18w,10,0,0,OK,miss,1,124,no,0.75,[],ok,Smooth teardrop outline single tapered end no distinct spicules
+P2,20170905,8w,96,0,0,OK,miss,1,106,yes,0.65,"[{""frame"": 1, ""x"": 600, ""y"": 350}]",ok,Single pointed protrusion on right side of rounded cell
+P2,20170724,2w,32,0,0,OK,miss,1,180,no,0.85,[],ok,Smooth oval outline without pointed protrusions.
+P2,20170822,6w,88,0,0,OK,miss,1,112,yes,0.75,"[{""frame"": 1, ""x"": 615, ""y"": 355}]",ok,Single sharp pointed tip on teardrop cell outline.
+P2,20170711,0w,10,0,0,OK,miss,1,124,no,0.75,[],ok,"Smooth teardrop outline with flow taper, no sharp spikes."
+P2,20170711,0w,32,0,0,OK,miss,1,126,no,0.75,[],ok,Smooth teardrop outline without distinct pointed protrusions
+P2,20171114,18w,57,0,0,OK,miss,1,124,no,0.75,[],ok,Smooth teardrop outline without distinct pointed spicules
+P2,20170905,8w,22,0,0,OK,miss,1,109,no,0.9,[],ok,Smooth curved outline with no pointed protrusions visible
+P2,20170809,4w,98,0,0,OK,miss,1,152,no,0.6,[],ok,"Deformed teardrop shape with smooth outline, no distinct spikes."
+P2,20180116,27w,12,0,0,OK,miss,1,193,no,0.85,[],ok,Smooth oval outline with no pointed protrusions.
+P2,20170724,2w,11,0,0,OK,miss,1,182,no,0.75,[],ok,Smooth oval outline without distinct pointed protrusions.
+P2,20170711,0w,91,0,0,OK,miss,1,129,no,0.75,[],ok,Smooth tapered outline without distinct pointed protrusions.
+P2,20171114,18w,36,0,0,OK,miss,1,126,no,0.65,[],ok,"Smooth curved outline, no distinct pointed protrusions visible"
+P2,20170724,2w,121,0,0,OK,miss,1,198,yes,0.62,"[{""frame"": 1, ""x"": 610, ""y"": 350}]",ok,Triangular cell with sharp pointed apex on upper outline.
+P2,20170711,0w,83,0,0,OK,miss,1,124,yes,0.55,"[{""frame"": 1, ""x"": 610, ""y"": 350}]",ok,Single pointed protrusion on upper edge of rounded cell
+P2,20170724,2w,16,0,0,OK,miss,1,178,no,0.9,[],ok,"Smooth curved outline, no pointed protrusions visible."
+P4,20170907,0w,37,0,0,OK,miss,1,130,cannot_tell,0.4,[],poor,Single blurred cell outline indistinct no clear spicules
+P4,20180109,18w,41,0,0,OK,miss,1,149,cannot_tell,0.35,[],poor,"Blurry cell outline indistinct, no distinct pointed protrusions resolvable."
+P1,20170905,10w,57,1,0,OK,miss,1,125,cannot_tell,0.5,[],poor,"Single blurry frame, cell outline indistinct, no distinct protrusions visible."
+P1,20180116,29w,25,1,0,OK,miss,1,192,cannot_tell,0.4,[],poor,"Cell dark and blurred, outline indistinct without clear pointed protrusions"
+P1,20170905,10w,58,1,0,OK,miss,1,122,cannot_tell,0.65,[],poor,Indistinct blurry outline without clear pointed protrusions visible
+P1,20170905,10w,45,1,0,OK,miss,1,125,cannot_tell,0.5,[],poor,Too blurred to discern distinct spicules
+P1,20171212,24w,5,1,0,OK,miss,1,179,no,0.7,[],ok,Smooth curved outline without pointed protrusions.
+P1,20170711,2w,20,1,0,OK,miss,1,168,no,0.65,[],ok,"Triangular deformed cell with smooth outline, no pointed spicules visible."
+P1,20170822,8w,70,1,0,OK,miss,1,137,cannot_tell,0.4,[],poor,Indistinct outline without clear pointed protrusions visible
+P1,20171212,24w,9,1,0,OK,miss,1,99,cannot_tell,0.5,[],poor,"Indistinct outline, no clear pointed protrusions visible."
+P1,20170724,4w,60,1,0,OK,miss,1,126,cannot_tell,0.5,[],poor,Irregular lower outline but tip indistinct due to pixelation
+P1,20170711,2w,13,1,0,OK,miss,1,163,cannot_tell,0.35,[],poor,Blurry grainy cell outline prevents clear spicule assessment.
+P1,20171114,20w,20,1,0,OK,miss,1,160,yes,0.65,"[{""frame"": 1, ""x"": 615, ""y"": 735}, {""frame"": 1, ""x"": 675, ""y"": 545}]",ok,Irregular outline with multiple pointed projections visible.
+P1,20171114,20w,2,1,0,OK,miss,1,160,cannot_tell,0.55,[],poor,Irregular triangular outline without distinct sharp pointed protrusions
+P1,20170711,2w,9,1,0,OK,miss,1,167,cannot_tell,0.45,[],poor,Triangular outline without distinct resolved spicules
+P1,20170711,2w,48,1,0,OK,miss,1,156,cannot_tell,0.4,[],poor,"Triangular outline with indistinct edges, single possible apex not definitive."
+P1,20170711,2w,92,1,0,OK,miss,1,158,no,0.65,[],ok,Outline smooth teardrop without distinct pointed protrusions.
+P1,20180705,53w,29,1,0,OK,miss,1,149,cannot_tell,0.5,[],poor,Irregular outline but no distinct pointed protrusions resolvable.
+P1,20170809,6w,16,1,0,OK,miss,1,126,cannot_tell,0.4,[],poor,Blurry dark irregular cell outline prevents clear spicule identification
+P1,20170711,2w,51,1,0,OK,miss,1,162,cannot_tell,0.4,[],poor,Low resolution blur prevents clear outline; possible angularity but no distinct spicules
+P1,20170809,6w,41,1,0,OK,miss,1,130,cannot_tell,0.6,[],poor,Cell outline irregular with possible bumps but blur prevents clear tip identification
+P1,20171212,24w,63,1,0,OK,miss,1,177,cannot_tell,0.35,[],poor,"Dark blurry deformed cell, outline indistinct, no distinct pointed spicules resolved."
+P1,20171114,20w,42,1,0,OK,miss,1,151,yes,0.6,"[{""frame"": 1, ""x"": 410, ""y"": 600}, {""frame"": 1, ""x"": 555, ""y"": 720}]",ok,Irregular outline with pointed projections at left and bottom.
+P2,20170905,8w,104,1,0,OK,miss,1,110,cannot_tell,0.4,[],poor,Image too blurry grainy to assess outline protrusions clearly
+P2,20180705,51w,21,1,0,OK,miss,1,135,yes,0.65,"[{""frame"": 1, ""x"": 585, ""y"": 470}, {""frame"": 1, ""x"": 560, ""y"": 680}]",ok,Irregular cell with pointed projections on right and lower edge.
+P2,20170724,2w,65,1,0,OK,miss,1,195,cannot_tell,0.5,[],poor,Blurry low-resolution outline prevents spicule assessment
+P2,20170711,0w,45,1,0,OK,miss,1,121,no,0.7,[],ok,Rounded outline smooth without pointed protrusions visible.
+P2,20170724,2w,130,1,0,OK,miss,1,195,cannot_tell,0.7,[],poor,Indistinct dark shape outline not resolvable
+P2,20170905,8w,79,1,0,OK,miss,1,120,no,0.7,[],ok,Smooth rounded outline with no pointed protrusions visible.
+P2,20170711,0w,99,1,0,OK,miss,1,128,no,0.8,[],ok,Smooth crescent outline without pointed protrusions visible.
+P2,20170711,0w,106,1,0,OK,miss,1,125,yes,0.55,"[{""frame"": 1, ""x"": 606, ""y"": 360}]",poor,Single pointed protrusion on upper outline teardrop contour
+P2,20170905,8w,99,1,0,OK,miss,1,108,cannot_tell,0.5,[],poor,Blurry dark cell outline prevents assessing pointed protrusions.
+P2,20170724,2w,57,1,0,OK,miss,1,193,no,0.7,[],ok,Outline irregularly deformed but smooth without distinct pointed protrusions.
+P2,20171212,22w,32,1,0,OK,miss,1,183,cannot_tell,0.7,[],poor,"Outline indistinct, no distinct pointed protrusions resolvable."
+P2,20180705,51w,17,1,0,OK,miss,1,141,cannot_tell,0.4,[],poor,Blurry cell outline irregular but no clear distinct pointed spicules visible
+P2,20180705,51w,1,1,0,OK,miss,1,143,yes,0.75,"[{""frame"": 1, ""x"": 405, ""y"": 530}, {""frame"": 1, ""x"": 530, ""y"": 355}, {""frame"": 1, ""x"": 535, ""y"": 695}]",ok,Irregular outline with multiple sharp pointed projections visible.
+P2,20170724,2w,78,1,0,OK,miss,1,197,yes,0.65,"[{""frame"": 1, ""x"": 570, ""y"": 380}]",ok,Teardrop cell with single sharp apical point on otherwise rounded outline.
+P2,20170822,6w,23,1,0,OK,miss,1,122,yes,0.8,"[{""frame"": 1, ""x"": 463, ""y"": 420}, {""frame"": 1, ""x"": 549, ""y"": 410}, {""frame"": 1, ""x"": 470, ""y"": 604}, {""frame"": 1, ""x"": 547, ""y"": 610}]",ok,Star-shaped cell with multiple distinct pointed protrusions around outline.
+P2,20170809,4w,13,1,0,OK,miss,1,175,no,0.75,[],ok,"Smooth teardrop outline, no pointed protrusions visible."
+P2,20170809,4w,84,1,0,OK,miss,1,162,yes,0.5,"[{""frame"": 1, ""x"": 540, ""y"": 210}]",poor,Small pointed projection atop irregular cell outline visible.
+P4,20180109,18w,5,1,0,OK,miss,1,156,no,0.7,[],ok,"Smooth curved outline with flow deformation, no distinct spicules."
+P4,20180109,18w,42,1,0,OK,miss,1,151,cannot_tell,0.5,[],poor,Blurry low resolution outline prevents spicule assessment
+P1,20180705,53w,24,0,1,OK,miss,1,145,cannot_tell,0.4,[],poor,"Teardrop shape with smooth indistinct outline, no clear spicules."
+P1,20170627,0w,119,0,1,OK,miss,1,112,yes,0.65,"[{""frame"": 1, ""x"": 630, ""y"": 660}]",ok,Single distinct pointed protrusion at right pole with teardrop shape.
+P1,20180116,29w,24,0,1,OK,miss,1,180,cannot_tell,0.35,[],poor,"Outline blurred, no distinct pointed protrusions visible."
+P1,20170809,6w,1,0,1,OK,miss,1,118,no,0.6,[],ok,Smooth rounded outline with no pointed protrusions visible.
+P1,20171114,20w,91,0,1,OK,miss,1,159,no,0.65,[],ok,Smooth deformed outline without distinct pointed protrusions
+P1,20171114,20w,16,0,1,OK,miss,1,161,no,0.85,[],ok,Smooth teardrop contour with no distinct pointed spicules visible.
+P1,20170711,2w,59,0,1,OK,miss,1,157,cannot_tell,0.5,[],poor,Blurry irregular outline without distinct pointed protrusions
+P1,20170724,4w,61,0,1,OK,miss,1,125,cannot_tell,0.55,[],poor,Outline blurred indistinct no clear protrusions visible
+P1,20170724,4w,29,0,1,OK,miss,1,127,no,0.85,[],ok,Smooth rounded outline without pointed protrusions.
+P1,20170627,0w,133,0,1,OK,miss,1,109,no,0.65,[],ok,"Rounded teardrop outline with single flow point, no distinct spicules."
+P1,20171114,20w,93,0,1,OK,miss,1,155,no,0.65,[],ok,Irregular smooth outline with tapered end but no distinct pointed spicules.
+P1,20170822,8w,12,0,1,OK,miss,1,150,no,0.8,[],ok,"Round smooth outline, no pointed protrusions visible."
+P1,20170627,0w,46,0,1,OK,miss,1,115,cannot_tell,0.3,[],poor,"Cell small and blurred, outline detail insufficient for spicules"
+P1,20170822,8w,26,0,1,OK,miss,1,135,yes,0.55,"[{""frame"": 1, ""x"": 560, ""y"": 700}]",ok,"Single pointed tapered tip visible, otherwise smooth outline."
+P1,20170809,6w,54,0,1,OK,miss,1,130,no,0.75,[],ok,Smooth rounded outline without pointed protrusions.
+P1,20170822,8w,63,0,1,OK,miss,1,132,no,0.75,[],ok,Round smooth outline without pointed protrusions visible.
+P1,20170724,4w,55,0,1,OK,miss,1,132,no,0.7,[],ok,Smooth oval outline without distinct pointed protrusions.
+P1,20170724,4w,59,0,1,OK,miss,1,129,no,0.65,[],poor,Smooth cup-shaped outline without distinct pointed spicules.
+P2,20170905,8w,98,0,1,OK,miss,1,108,cannot_tell,0.4,[],poor,"Image dark and blurry; cell outline indistinct, no clear spicules resolvable."
+P2,20170905,8w,89,0,1,OK,miss,1,110,no,0.75,[],ok,Smooth oval outline without pointed protrusions.
