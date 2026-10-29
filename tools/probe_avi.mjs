@@ -1,5 +1,9 @@
 // Probe *_imaq.avi (and other .avi) entries in P1 archive via Range/ZIP64 central directory. Read-only listing.
 import fs from 'node:fs';
+const MAP_PATH = new URL('../private/initials_map.json', import.meta.url);
+if (!fs.existsSync(MAP_PATH)) { console.error('private/initials_map.json missing: create the git-ignored initials -> P-code map before running probe'); process.exit(1); }
+const CODE = JSON.parse(fs.readFileSync(MAP_PATH, 'utf8'));
+const P1_INIT = Object.keys(CODE).find((k) => CODE[k] === 'P1');
 const files = JSON.parse(fs.readFileSync(new URL('../data/fetch_manifest/figshare_files.json', import.meta.url), 'utf8'));
 const parts = files.filter(f => /shape_analysis_P1\.zip/.test(f.title)).sort((a, b) => a.title.localeCompare(b.title));
 let starts = [], acc = 0;
@@ -42,4 +46,4 @@ const imaq = avis.filter(a => /imaq/i.test(a.name));
 console.log('IMAQ entries:', imaq.length);
 imaq.slice(0, 10).forEach(a => console.log(a.usize, a.name));
 fs.writeFileSync(new URL('../data/fetch_manifest/p1_avi_entries.json', import.meta.url),
-  JSON.stringify(avis.map(a => ({ name: a.name.replace(/(^|\/)P1(?=[/(_])/g, '$1P1').replace(/_P1(?=\()/g, '_P1'), usize: a.usize })), null, 1));
+  JSON.stringify(avis.map(a => ({ name: a.name.replace(new RegExp(`(^|/)${P1_INIT}(?=[/(_])`, 'g'), '$1P1').replace(new RegExp(`_${P1_INIT}(?=\()`, 'g'), '_P1'), usize: a.usize })), null, 1));

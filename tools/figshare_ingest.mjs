@@ -12,7 +12,9 @@ const MANIFEST_DIR = ROOT + 'data/fetch_manifest';
 const DEV_DIR = ROOT + 'data/dev';
 const DEV = new Set(['P1', 'P2', 'P4']);
 // Authors' initial codes -> P-codes (notebook order). Used ONLY to rename on ingest; initials are never written to disk.
-const CODE = { P1: 'P1', P2: 'P2', P3: 'P3', P4: 'P4', P5: 'P5' };
+const MAP_PATH = ROOT + 'private/initials_map.json';
+if (!fs.existsSync(MAP_PATH)) { console.error('private/initials_map.json missing: create the git-ignored initials -> P-code map before running ingest'); process.exit(1); }
+const CODE = JSON.parse(fs.readFileSync(MAP_PATH, 'utf8'));
 function deidentify(name, archivePatient) {
   // Returns sanitized name, or null if the entry belongs to a different (nested) patient -> skip.
   // Any occurrence of an initial code as a path segment or as _XX( visit token counts as ownership.

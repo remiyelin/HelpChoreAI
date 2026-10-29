@@ -6,10 +6,14 @@ Requires: pip install requests
 """
 import hashlib, io, json, re, struct, sys, zipfile
 from pathlib import Path
+ROOT = Path(__file__).resolve().parent.parent
+_MAP_PATH = ROOT / "private" / "initials_map.json"
+if not _MAP_PATH.exists():
+    raise SystemExit("private/initials_map.json missing: create the git-ignored initials -> P-code map before running ingest")
+CODE = json.loads(_MAP_PATH.read_text())
 import requests
 
 API = "https://api.figshare.com/v2/collections/5793482/articles?page_size=100"
-ROOT = Path(__file__).resolve().parent.parent
 DEV = {"P1", "P2", "P4"}
 
 def article_files():
@@ -88,7 +92,6 @@ def main():
             raw = rdr.range(e["lho"] + 30 + nl + el, e["lho"] + 30 + nl + el + e["csize"])
             return zipfile.ZipFile(io.BytesIO(b"PK\x03\x04" + lh[4:] + raw)).open(e["name"]).read() if False else (
                 __import__("zlib").decompress(raw, -15) if e["method"] == 8 else raw)
-        CODE = {"P1": "P1", "P2": "P2", "P3": "P3", "P4": "P4", "P5": "P5"}
         def deidentify(name):
             for init, p in CODE.items():
                 if re.search(rf"(^|/){init}(?=[/(_])|_{init}(?=\()", name) and p != patient:

@@ -31,3 +31,6 @@ data/fetch_manifest/fetch_log_step1.json
 .DS_Store
 .idea/
 .vscode/
+private/
+pytest-of-*/
+data/signoffs.json
