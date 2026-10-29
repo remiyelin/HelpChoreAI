@@ -42,19 +42,10 @@ def decode_gray_png(png: bytes) -> np.ndarray:
     return rows[:, 1:].astype(float)
 
 
-def rasterize(poly, h, w):
-    pts = np.asarray(poly, dtype=float)
-    yy, xx = np.mgrid[0:h, 0:w]
-    inside = np.zeros((h, w), dtype=bool); x, y = pts[:, 0], pts[:, 1]; j = len(pts) - 1
-    for i in range(len(pts)):
-        cond = ((y[i] > yy) != (y[j] > yy)) & (xx < (x[j] - x[i]) * (yy - y[i]) / max(y[j] - y[i], 1e-9) + x[i])
-        inside ^= cond; j = i
-    return inside
-
-
 def pixel_features(img: np.ndarray, poly) -> dict | None:
+    import geometry
     h, w = img.shape
-    mask = rasterize(poly, h, w)
+    mask = geometry.fill_contour(poly, h, w)
     if mask.sum() < 20: return None
     inside, outside = img[mask], img[~mask]
     gy, gx = np.gradient(img)

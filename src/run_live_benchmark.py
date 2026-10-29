@@ -16,7 +16,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent))
-import checker, meta_api, server
+import checker, geometry, meta_api, server
+from step3b_pixel_model import decode_gray_png
 
 ROOT = Path(__file__).resolve().parent.parent
 TABLES, DOCS = ROOT / "data" / "tables", ROOT / "docs"
@@ -45,6 +46,38 @@ def stratified_cells(n_total=30):
         if len(got) > want: got = got.sort_values("confidence").iloc[np.linspace(0, len(got) - 1, want).round().astype(int)]
         picks.append(got)
     return pd.concat(picks).sort_values(["patient", "confidence"]).reset_index(drop=True)
+
+
+def save_overlays(cells_df, n=3):
+    """docs/media/p03_overlay_1..n.png: crop (x4) + author contour (teal) + SAM mask (amber tint)."""
+    import struct, zlib
+    outdir = DOCS / "media"; outdir.mkdir(parents=True, exist_ok=True)
+    saved = []
+    ok = cells_df[cells_df.sam_status == "OK"].head(n)
+    for k, (_, q) in enumerate(ok.iterrows(), 1):
+        got = server.frame_png(q.patient, str(q.date), int(q.cell), crop=True)
+        if got is None: continue
+        png, info = got
+        img = decode_gray_png(png); hh, ww = img.shape
+        poly = info.get("contour_crop_fullres") or info["contour_crop"]
+        ck = meta_api._key("sam-3.1", [{"img": __import__("hashlib").sha256(png).hexdigest(), "author": poly}], extra="responses-v2")
+        entry = json.loads((meta_api.CACHE / f"{ck}.json").read_text())
+        sm = (geometry.mask_from_rows(entry["mask_rows"], hh, ww) if entry.get("mask_rows")
+              else geometry.mask_from_rowspans(entry.get("polygon") or [], hh, ww))
+        rgb = np.stack([img, img, img], -1).astype(float)
+        rgb[sm] = rgb[sm] * 0.45 + np.array([245.0, 158.0, 11.0]) * 0.55
+        for x, y in poly:
+            if 0 <= int(y) < hh and 0 <= int(x) < ww: rgb[int(y), int(x)] = [13.0, 200.0, 180.0]
+        big = np.repeat(np.repeat(rgb.astype(np.uint8), 4, 0), 4, 1)
+        bh, bw = big.shape[:2]
+        raw = b"".join(b"\x00" + big[i].tobytes() for i in range(bh))
+        def chunk(tag, data):
+            c = struct.pack(">I", len(data)) + tag + data
+            return c + struct.pack(">I", zlib.crc32(tag + data) & 0xffffffff)
+        data = (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", bw, bh, 8, 2, 0, 0, 0))
+                + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
+        p = outdir / f"p03_overlay_{k}.png"; p.write_bytes(data); saved.append(str(p.relative_to(ROOT)))
+    return saved
 
 
 def spicule_flag(text: str):
@@ -83,9 +116,19 @@ def main():
         spark = meta_api.spark_visual_check(png)
         if spark.get("_cache") == "miss": spend_guard("spark-visual")
         flag = spicule_flag(spark.get("text", "")) if spark.get("status") == "OK" else None
+        # IoU + area ratio from geometry.py, recomputed here from the cached mask (never the stored number).
+        iou_g, ratio_g = sam.get("iou_vs_author"), None
+        if sam.get("status") == "OK" and poly:
+            hh, ww = decode_gray_png(png).shape
+            sm = (geometry.mask_from_rows(sam["mask_rows"], hh, ww) if sam.get("mask_rows")
+                  else geometry.mask_from_rowspans(sam.get("polygon") or [], hh, ww))
+            am = geometry.fill_contour(poly, hh, ww)
+            iou_g = round(geometry.iou(sm, am), 3)
+            ratio_g = round(geometry.area(sm) / geometry.area(am), 3) if geometry.area(am) else None
         cell_rows.append({"patient": q.patient, "date": str(q.date), "visit": q.visit, "cell": int(q.cell),
                           "author_health": int(q.health), "pred": int(q.pred), "confidence": float(q.confidence),
-                          "sam_status": sam.get("status"), "sam_detail": (sam.get("detail") or "")[:200], "sam_iou": sam.get("iou_vs_author"),
+                          "sam_status": sam.get("status"), "sam_detail": (sam.get("detail") or "")[:200], "sam_iou": iou_g,
+                          "sam_area_ratio": ratio_g,
                           "sam_mode": sam.get("prompt_mode"), "sam_cache": sam.get("_cache"),
                           "spark_status": spark.get("status"), "spark_cache": spark.get("_cache"),
                           "spark_spicule": flag,
@@ -135,15 +178,19 @@ def main():
                "spark_ok": int((cdf.spark_status == "OK").sum()),
                "spark_author_agreement": round(float(agree.mean()), 3) if len(agree) else None,
                "spark_author_n": int(len(agree)),
+               "sam_area_ratio_median": round(float(cdf.loc[cdf.sam_status == "OK", "sam_area_ratio"].median()), 3) if len(cdf) and "sam_area_ratio" in cdf else None,
                "pairs_n": int(len(pdf)), "parity_n": int(pdf.parity.sum()) if len(pdf) else 0,
                "new_api_calls": int(new_calls[0]),
                "models": {"sam": "sam-3.1", "cloud": "muse-spark-1.3", "open_weight": "meta-models/muse-spark-open (Baseten)"}}
+    summary["overlays"] = save_overlays(cdf)
     (TABLES / "live_benchmark_summary.json").write_text(json.dumps(summary, indent=1), encoding="utf-8")
     lines = ["# Live Multi-Model Benchmark (cached, real data)", "",
              f"Cells: {summary['cells_n']} stratified queue cells across P1/P2/P4 with real frames. "
              f"SAM 3.1 OK {summary['sam_ok']}/{summary['cells_n']}; IoU vs author contour mean {summary['sam_iou_mean']}, "
              f"median {summary['sam_iou_median']}, range {summary['sam_iou_min']}-{summary['sam_iou_max']}, "
-             f"fraction >= 0.80: {summary['sam_iou_ge80_frac']}.", "",
+             f"fraction >= 0.80: {summary['sam_iou_ge80_frac']}. Median SAM/author mask-area ratio: {summary['sam_area_ratio_median']}. "
+             "Note: the author contour is a convex hull that can include MOG2 shadow pixels, so IoU < 1 even for a perfect mask; "
+             "cached masks predate the PromptBox half-open (+1 px) fix, which applies to future calls only.", "",
              f"Muse Spark 1.3 visual check OK {summary['spark_ok']}/{summary['cells_n']}; spicule-keyword vs author-health "
              f"agreement {summary['spark_author_agreement']} (n={summary['spark_author_n']}, keyword heuristic on free text, not a label).", "",
              f"Visit pairs: {summary['pairs_n']}. Cloud narrative (muse-spark-1.3, digit-free enforced) + Checker/local audit vs "

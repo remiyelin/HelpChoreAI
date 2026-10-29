@@ -12,6 +12,7 @@ dependencies = [
     "pytest",
     "openai",
     "meta-sam-parser",
+    "opencv-python-headless",
 ]
 
 [build-system]

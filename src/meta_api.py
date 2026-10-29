@@ -77,7 +77,9 @@ def sam_segment(png_bytes, author_poly=None, wh=(200, 40)):
     ck = _key("sam-3.1", [{"img": img_hash, "author": author_poly}], extra="responses-v2")
     hit = CACHE / f"{ck}.json"
     if hit.exists():
-        out = json.loads(hit.read_text()); out["_cache"] = "hit"; return out
+        out = json.loads(hit.read_text())
+        _attach_iou(out, author_poly, wh)
+        out["_cache"] = "hit"; return out
     if _public():
         return {"status": "CACHE_ONLY", "detail": "PUBLIC_MODE: live calls disabled and no cached result", "_cache": "miss"}
     if not key: return {"status": "BLOCKED", "detail": "META_MODEL_API_KEY not set"}
@@ -87,7 +89,19 @@ def sam_segment(png_bytes, author_poly=None, wh=(200, 40)):
         out = {"status": "BLOCKED", "detail": f"{type(e).__name__}: {e}"}
     if out.get("status") == "OK":
         hit.write_text(json.dumps(out, indent=1))
+    _attach_iou(out, author_poly, wh)
     return out | {"_cache": "miss"}
+
+def _attach_iou(out, author_poly, wh):
+    """IoU vs author contour via geometry.py, computed after cache retrieval (never stored)."""
+    if out.get("status") != "OK" or not author_poly: return
+    import geometry
+    w, h = wh
+    sam_mask = (geometry.mask_from_rows(out["mask_rows"], h, w) if out.get("mask_rows")
+                else geometry.mask_from_rowspans(out.get("polygon") or [], h, w))
+    out["iou_vs_author"] = round(geometry.iou(sam_mask, geometry.fill_contour(author_poly, h, w)), 3)
+    out["sam_area"] = geometry.area(sam_mask)
+    out["author_area"] = geometry.area(geometry.fill_contour(author_poly, h, w))
 
 def _sam_run(key, png_bytes, author_poly, wh):
     import asyncio, base64
@@ -170,8 +184,9 @@ def _sam_run(key, png_bytes, author_poly, wh):
     recs, mode = records_of(result), "concept:red blood cell"
     if not recs and author_poly:
         xs = [p[0] for p in author_poly]; ys = [p[1] for p in author_poly]
+        # PromptBox is half-open: right/bottom are one past the last pixel (builder writes x2=right-1).
         prompt = build_object_prompt(size=(w, h), objects=[PromptObject(id="1", prompts=[
-            FramePrompt(frame=0, box=PromptBox(left=int(min(xs)), top=int(min(ys)), right=int(max(xs)), bottom=int(max(ys))))])])
+            FramePrompt(frame=0, box=PromptBox(left=int(min(xs)), top=int(min(ys)), right=int(max(xs)) + 1, bottom=int(max(ys)) + 1))])])
         result = run_sync(prompt)
         recs, mode = records_of(result), "box-prompt(author box)"
     if not recs:
@@ -182,24 +197,16 @@ def _sam_run(key, png_bytes, author_poly, wh):
     rec = min(recs, key=lambda r: ((r["left"] + r["right"]) / 2 - cx) ** 2 + ((r["top"] + r["bottom"]) / 2 - cy) ** 2)
     mw, mh = rec["mw"] or (rec["right"] - rec["left"] + 1), rec["mh"] or (rec["bottom"] - rec["top"] + 1)
     poly, raster = _mask_outline(rec["raster"], mw, mh, rec["left"], rec["top"])
-    out = {"status": "OK", "model": "sam-3.1", "prompt_mode": mode, "polygon": poly,
-           "box": [rec["left"], rec["top"], rec["right"], rec["bottom"]], "records": len(recs)}
-    if author_poly:
-        import numpy as np
-        author_raster = np.zeros((h, w), dtype=np.uint8)
-        # rasterize author polygon via polygon_iou helper mask logic
-        yy, xx = np.mgrid[0:h, 0:w]; pts = np.asarray(author_poly, dtype=float)
-        inside = np.zeros((h, w), dtype=bool); x, y = pts[:, 0], pts[:, 1]; j = len(pts) - 1
-        for i in range(len(pts)):
-            cond = ((y[i] > yy) != (y[j] > yy)) & (xx < (x[j] - x[i]) * (yy - y[i]) / max(y[j] - y[i], 1e-9) + x[i])
-            inside ^= cond; j = i
-        sam_full = np.zeros((h, w), dtype=np.uint8)
-        sub = np.frombuffer(rec["raster"], dtype=np.uint8).reshape(mh, mw)
-        y0, y1, x0, x1 = rec["top"], min(h, rec["top"] + mh), rec["left"], min(w, rec["left"] + mw)
-        if y1 > y0 and x1 > x0: sam_full[y0:y1, x0:x1] = sub[:y1 - y0, :x1 - x0]
-        union = ((inside > 0) | (sam_full > 0)).sum()
-        out["iou_vs_author"] = round(float(((inside > 0) & (sam_full > 0)).sum() / union), 3) if union else 0.0
-    return out
+    # Store the decoded mask as row spans in the cache entry; IoU is computed OUTSIDE the
+    # cache (geometry.py) by callers, never stored. Raster is cropped to the box, pasted at (left, top).
+    import numpy as np
+    sub = np.frombuffer(rec["raster"], dtype=np.uint8).reshape(mh, mw)
+    rows = []
+    for yy in range(mh):
+        xs_on = np.flatnonzero(sub[yy])
+        if len(xs_on): rows.append([int(yy + rec["top"]), int(xs_on[0] + rec["left"]), int(xs_on[-1] + rec["left"])])
+    return {"status": "OK", "model": "sam-3.1", "prompt_mode": mode, "polygon": poly, "mask_rows": rows,
+            "box": [rec["left"], rec["top"], rec["right"], rec["bottom"]], "records": len(recs)}
 
 def spark_visual_check(png_bytes):
     key = os.environ.get("META_MODEL_API_KEY")
@@ -289,21 +296,9 @@ def transcribe_audio(wav_bytes, mode="PUSH_TO_TALK", filename="review.wav"):
     return out | {"_cache": "miss"}
 
 def polygon_iou(poly_a, poly_b, w, h):
-    """Raster IoU on a w x h grid (numpy, point-in-polygon via ray casting on pixel centers)."""
-    import numpy as np
-    def mask(poly):
-        pts = np.asarray(poly, dtype=float)
-        yy, xx = np.mgrid[0:h, 0:w]
-        inside = np.zeros((h, w), dtype=bool)
-        x, y = pts[:, 0], pts[:, 1]
-        j = len(pts) - 1
-        for i in range(len(pts)):
-            cond = ((y[i] > yy) != (y[j] > yy)) & (xx < (x[j] - x[i]) * (yy - y[i]) / max(y[j] - y[i], 1e-9) + x[i])
-            inside ^= cond; j = i
-        return inside
-    a, b = mask(poly_a), mask(poly_b)
-    union = (a | b).sum()
-    return float((a & b).sum() / union) if union else 0.0
+    """Raster IoU on a w x h grid via geometry.fill_contour (the old ray caster over-filled)."""
+    import geometry
+    return geometry.iou(geometry.fill_contour(poly_a, h, w), geometry.fill_contour(poly_b, h, w))
 
 if __name__ == "__main__":
     import sys
