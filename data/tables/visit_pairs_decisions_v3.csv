@@ -1,0 +1,22 @@
+patient,from,to,treatment,delta_raw,delta_adj,RCV95,RCV95_sensitivity,decision
+P1,0w,2w,dasatinib initiation (from day-0 baseline),0.157,0.1541,0.0416,0.0523,exceeds_RCV
+P1,2w,4w,dasatinib on-treatment,-0.0759,-0.1028,0.0385,0.0515,exceeds_RCV
+P1,4w,6w,dasatinib on-treatment,0.1053,0.1212,0.0413,0.053,exceeds_RCV
+P1,6w,8w,dasatinib on-treatment,-0.051,0.0035,0.0546,0.0682,within_RCV
+P1,8w,10w,dasatinib on-treatment,-0.0261,-0.0903,0.0529,0.068,exceeds_RCV
+P1,10w,14w,dasatinib on-treatment,0.0443,0.0491,0.0444,0.0565,indeterminate_QC
+P1,14w,20w,dasatinib on-treatment,-0.092,-0.0838,0.0372,0.0515,indeterminate_QC
+P1,20w,24w,dasatinib on-treatment,-0.014,0.0032,0.0331,0.0495,indeterminate_QC
+P1,24w,29w,dasatinib on-treatment,0.1427,0.1262,0.0452,0.0595,indeterminate_QC
+P1,29w,53w,dasatinib on-treatment,-0.222,-0.2104,0.0432,0.0579,indeterminate_QC
+P2,0w,2w,dasatinib initiation (from day-0 baseline),0.0328,0.0392,0.0339,0.0446,exceeds_RCV
+P2,2w,4w,dasatinib on-treatment,0.0263,-0.0023,0.031,0.0427,within_RCV
+P2,4w,6w,dasatinib on-treatment,-0.0033,-0.0133,0.0383,0.05,within_RCV
+P2,6w,8w,dasatinib on-treatment,-0.01,-0.0029,0.0394,0.0514,within_RCV
+P2,8w,12w,dasatinib on-treatment,0.0405,0.032,0.0391,0.0517,within_RCV
+P2,12w,18w,dasatinib on-treatment,-0.1399,-0.1182,0.0388,0.0518,exceeds_RCV
+P2,18w,22w,dasatinib on-treatment,0.1637,0.1629,0.0451,0.0574,indeterminate_QC
+P2,22w,27w,dasatinib on-treatment,-0.0447,-0.0403,0.077,0.0856,indeterminate_QC
+P2,27w,51w,dasatinib on-treatment,0.2351,0.2645,0.1004,0.1077,indeterminate_QC
+P4,0w,9w,lithium initiation (from day-0 baseline),-0.0314,-0.0174,0.0406,0.0527,within_RCV
+P4,9w,18w,lithium on-treatment,-0.0,-0.0079,0.0355,0.0489,within_RCV

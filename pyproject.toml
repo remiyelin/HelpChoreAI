@@ -13,6 +13,7 @@ dependencies = [
     "openai",
     "meta-sam-parser",
     "opencv-python-headless",
+    "statsmodels",
 ]
 
 [build-system]

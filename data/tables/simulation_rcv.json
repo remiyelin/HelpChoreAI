@@ -1,0 +1,40 @@
+{
+ "n_visits": 24,
+ "splits_per_visit": 1000,
+ "bootstrap_B": 200,
+ "total_splits": 24000,
+ "null_false_exceed_rate": {
+  "naive_binomial": 0.322,
+  "bootstrap_raw": 0.0624,
+  "bootstrap_flowadj": 0.0638
+ },
+ "power_detection_rate": {
+  "0.05": {
+   "naive_binomial": 0.5519,
+   "bootstrap_raw": 0.1932,
+   "bootstrap_flowadj": 0.3061
+  },
+  "0.1": {
+   "naive_binomial": 0.8452,
+   "bootstrap_raw": 0.5115,
+   "bootstrap_flowadj": 0.7724
+  }
+ },
+ "qc_sensitivity": {
+  "0.2": {
+   "exceeds_RCV": 6,
+   "within_RCV": 7,
+   "indeterminate_QC": 8
+  },
+  "0.25": {
+   "exceeds_RCV": 6,
+   "within_RCV": 7,
+   "indeterminate_QC": 8
+  },
+  "0.3": {
+   "exceeds_RCV": 8,
+   "within_RCV": 7,
+   "indeterminate_QC": 6
+  }
+ }
+}

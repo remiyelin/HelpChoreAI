@@ -49,7 +49,7 @@
   <label>Overdispersion φ <input id="plPhi" type="number" step="0.1" value="2.5"></label>
   <label>Cells per run <input id="plCells" type="number" step="10" value="110"></label>
   <button id="btnPlan">Calculate runs needed</button> <span id="planOut"></span>
-  <p class="hint">Per-visit variance = φ·p(1−p)/N + label variance, N = runs × cells/run. RCV95 = 1.96·√(2·var). Label error 0.391 (Step 3 proxy).</p></div>
+  <p class="hint">Per-visit variance = φ·p(1−p)/N, N = runs × cells/run (v3: label variance excluded — classifier disagreement is not fraction noise; docs/STATS_VALIDATION.md).</p></div>
   <p>Reference flow 0.016 µL/s. Patient-intercept GLM + cluster bootstrap (run-level, B=400). QC-blocked pairs (skip rate &gt; 0.25 or low kept cells) are refused a decision.</p>
 </section>
 <section id="view-report" hidden>

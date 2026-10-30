@@ -59,8 +59,10 @@ async function renderChart(){const patient=$('#selPatient').value;const d=await 
  s+=`<polyline fill="none" stroke="#0d766e" stroke-width="2.5" points="${vs.map((v,i)=>X(i)+','+Y(v.frac_adj)).join(' ')}"/>`;
  vs.forEach((v,i)=>{s+=`<circle cx="${X(i)}" cy="${Y(v.frac_adj)}" r="3.5" fill="#0d766e"/><text x="${X(i)}" y="${H-12}" font-size="11" text-anchor="middle">${v.visit}</text>${v.qc_blocked?`<text x="${X(i)}" y="${pt+10}" font-size="10" fill="#b91c1c" text-anchor="middle">QC</text>`:''}`});
  s+=`<text x="${pl}" y="${pt+2}" font-size="11" fill="#6b7280">raw (gray) vs adjusted (teal)</text></svg>`;$('#longChart').innerHTML=s;}
-function planner(){const target=+$('#plTarget').value,p=+$('#plP').value,phi=+$('#plPhi').value,cells=+$('#plCells').value,e=0.391;
- const varNeed=Math.pow(target/1.96,2)/2;const perCell=phi*p*(1-p)+e*(1-e);const N=Math.ceil(perCell/varNeed);const runs=Math.ceil(N/cells);
+function planner(){const target=+$('#plTarget').value,p=+$('#plP').value,phi=+$('#plPhi').value,cells=+$('#plCells').value;
+ // Label variance (0.391) deliberately excluded: it is classifier-vs-author disagreement,
+ // not measurement noise of the fraction (v3 stats; sensitivity only in docs/STATS_VALIDATION.md).
+ const varNeed=Math.pow(target/1.96,2)/2;const perCell=phi*p*(1-p);const N=Math.ceil(perCell/varNeed);const runs=Math.ceil(N/cells);
  const achieved=1.96*Math.sqrt(2*(perCell/(runs*cells)));
  $('#planOut').innerHTML=`<b>${runs} runs/visit</b> (${runs*cells} cells) → MDC95 ≈ ${achieved.toFixed(3)} (target ${target})`;}
 document.addEventListener('click',e=>{if(e.target.id==='btnPlan')planner()});
