@@ -1,11 +1,14 @@
 // Extract exact frames from Online/M10_*_imaq.avi (deflate-in-ZIP) via sequential Range + inflate.
 // AVI frames are uncompressed 1280x48 grayscale DIBs inside 'movi'. Stops at maxFrame or output cap.
 // Usage: node tools/extract_imaq_frames.mjs --patient=P1 --visit=0w --date=20170627 --run=M10 --frames=120,640,1200
+//    or: node tools/extract_imaq_frames.mjs --patient=P1 --date=20170627 --range=1000-1200  (consecutive transit range)
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v]; }));
 const PAT = args.patient || 'P1', DATE = args.date || '20170627', RUN = args.run || 'M10';
-const TARGETS = new Set((args.frames || '120').split(',').map(Number));
+const TARGETS = new Set(args.range
+  ? Array.from({ length: Number(args.range.split('-')[1]) - Number(args.range.split('-')[0]) + 1 }, (_, i) => Number(args.range.split('-')[0]) + i)
+  : (args.frames || '120').split(',').map(Number));
 const OUTDIR = `data/frames/${PAT}_${DATE}_${RUN}`;
 fs.mkdirSync(OUTDIR, { recursive: true });
 const files = JSON.parse(fs.readFileSync('data/fetch_manifest/figshare_files.json', 'utf8'));

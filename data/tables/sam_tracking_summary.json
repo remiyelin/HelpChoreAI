@@ -1,0 +1,30 @@
+{
+ "billed_frames_total": 1581,
+ "cost_usd_at_0.20_per_1000": 0.3162,
+ "by_health": {
+  "0": {
+   "cells": 10,
+   "median_centroid_dist_px": 1.11,
+   "share_within_2px_mean": 0.683,
+   "frames_lost_total": 0,
+   "frames_total": 860,
+   "solidity_min_median": 0.929,
+   "solidity_median_median": 0.961
+  },
+  "1": {
+   "cells": 10,
+   "median_centroid_dist_px": 0.66,
+   "share_within_2px_mean": 0.801,
+   "frames_lost_total": 0,
+   "frames_total": 738,
+   "solidity_min_median": 0.927,
+   "solidity_median_median": 0.959
+  }
+ },
+ "overall": {
+  "median_centroid_dist_px": 0.81,
+  "share_within_2px_mean": 0.742,
+  "frames_lost_total": 0,
+  "frames_total": 1598
+ }
+}

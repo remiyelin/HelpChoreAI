@@ -358,6 +358,117 @@ def _sam_prompt_run(key, png_bytes, prompt_text):
         return {"status": "BLOCKED", "detail": "sam-3.1 returned zero masks", "masks": []}
     return {"status": "OK", "model": "sam-3.1", "masks": masks, "records": len(masks)}
 
+def sam_upload_video(mp4_bytes, filename="clip.mp4"):
+    """Files API upload (purpose=user_data) for SAM video. File id cached by content hash
+    in data/api_cache/video_uploads.json (upload is not a model call; tracking is)."""
+    load_env()
+    key = os.environ.get("META_MODEL_API_KEY") or os.environ.get("MODEL_API_KEY")
+    if not key: return {"status": "BLOCKED", "detail": "META_MODEL_API_KEY not set"}
+    CACHE.mkdir(parents=True, exist_ok=True)
+    reg_path = CACHE / "video_uploads.json"
+    reg = json.loads(reg_path.read_text()) if reg_path.exists() else {}
+    digest = hashlib.sha256(mp4_bytes).hexdigest()
+    if digest in reg: return {"status": "OK", "file_id": reg[digest], "_cache": "hit"}
+    boundary = "----helpchoreai-video-boundary"
+    body = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"purpose\"\r\n\r\nuser_data\r\n"
+            f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{filename}\"\r\n"
+            f"Content-Type: video/mp4\r\n\r\n").encode() + mp4_bytes + f"\r\n--{boundary}--\r\n".encode()
+    try:
+        resp = _post_multipart(META_BASE.rstrip("/") + "/files", key, body, f"multipart/form-data; boundary={boundary}", timeout=300)
+        file_id = resp.get("id")
+        if not (isinstance(file_id, str) and file_id.startswith("file-")):
+            return {"status": "BLOCKED", "detail": f"Files API returned no file id: {str(resp)[:200]}"}
+    except Exception as e:
+        return {"status": "BLOCKED", "detail": f"{type(e).__name__}: {e}"}
+    reg[digest] = file_id; reg_path.write_text(json.dumps(reg, indent=1))
+    return {"status": "OK", "file_id": file_id, "_cache": "miss"}
+
+def sam_track_video(file_id, mp4_bytes, prompt_text):
+    """SAM 3.1 video tracking over a Responses stream (video_segmentation_format).
+    Prompt text carries object prompts (frame = clip frame index); metadata requests
+    confidence + forward propagation. Returns per-frame mask row spans keyed by
+    (frame, object_id) + usage (incl. video_frames_processed). Cached by clip+prompt."""
+    load_env()
+    key = os.environ.get("META_MODEL_API_KEY") or os.environ.get("MODEL_API_KEY")
+    CACHE.mkdir(parents=True, exist_ok=True)
+    ck = _key("sam-3.1-video", [{"clip": hashlib.sha256(mp4_bytes).hexdigest(), "prompt": prompt_text}], extra="video-v1")
+    hit = CACHE / f"{ck}.json"
+    if hit.exists():
+        out = json.loads(hit.read_text()); out["_cache"] = "hit"; return out
+    if _public():
+        return {"status": "CACHE_ONLY", "detail": "PUBLIC_MODE: live calls disabled and no cached result", "_cache": "miss"}
+    if not key:
+        return {"status": "BLOCKED", "detail": "META_MODEL_API_KEY not set"}
+    try:
+        out = _sam_video_run(key, file_id, prompt_text)
+    except Exception as e:
+        out = {"status": "BLOCKED", "detail": f"{type(e).__name__}: {e}"}
+    if out.get("status") == "OK":
+        hit.write_text(json.dumps(out, indent=1))
+    return out | {"_cache": "miss"}
+
+def _sam_video_run(key, file_id, prompt_text):
+    from meta_sam_parser import parse_responses_stream, video_segmentation_format, decode_mask_to_raster
+    body = json.dumps({"model": "sam-3.1", "stream": True,
+                       "metadata": {"include_confidence": "true", "propagation_direction": "forward"},
+                       "input": [{"type": "message", "role": "user", "content": [
+                           {"type": "input_text", "text": prompt_text},
+                           {"type": "input_video", "file_id": file_id}]}]}).encode()
+    req = urllib.request.Request(META_BASE.rstrip("/") + "/responses", data=body,
+                                 headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+    events, completed, usage = [], set(), {}
+    with urllib.request.urlopen(req, timeout=900) as r:
+        for raw in r:
+            line = raw.decode("utf-8", "replace").strip()
+            if not line.startswith("data:"): continue
+            payload = line[5:].strip()
+            if payload == "[DONE]": break
+            try: data = json.loads(payload)
+            except Exception: continue
+            if isinstance(data.get("response"), dict) and isinstance(data["response"].get("usage"), dict):
+                usage = data["response"]["usage"]
+            lane = (data.get("item_id"), data.get("output_index"), data.get("content_index"))
+            if data.get("type") == "response.output_text.done":
+                if lane not in completed: completed.add(lane); events.append(data)
+                continue
+            events.append(data)
+            part = data.get("part")
+            if (data.get("type") == "response.content_part.done" and lane not in completed
+                    and isinstance(part, dict) and part.get("type") == "output_text" and isinstance(part.get("text"), str)):
+                completed.add(lane)
+                events.append({"type": "response.output_text.done", "item_id": data.get("item_id"),
+                               "output_index": data.get("output_index"), "content_index": data.get("content_index"),
+                               "text": part["text"]})
+    async def agen():
+        for e in events: yield e
+    async def _get():
+        return await parse_responses_stream(agen(), video_segmentation_format()).final_result()
+    result = _run_coro(_get())
+    import numpy as np
+    records = []
+    for rec in getattr(result, "records", []) or []:
+        if getattr(rec, "kind", "mask") != "mask" or getattr(rec, "mask", None) is None: continue
+        try:
+            raster = decode_mask_to_raster(rec.mask)
+            b = rec.bounds; mw, mh = int(rec.mask.width), int(rec.mask.height)
+            sub = np.frombuffer(raster, dtype=np.uint8).reshape(mh, mw)
+            rows = []
+            for yy in range(mh):
+                xs_on = np.flatnonzero(sub[yy])
+                if len(xs_on): rows.append([int(yy + int(b.top)), int(xs_on[0] + int(b.left)), int(xs_on[-1] + int(b.left))])
+            frame = getattr(rec, "frame", None)
+            records.append({"frame": (int(frame.frame_index) if frame is not None else None),
+                            "object_id": str(getattr(rec, "object_id", "")),
+                            "rows": rows, "box": [int(b.left), int(b.top), int(b.right), int(b.bottom)],
+                            "confidence": (float(rec.confidence) if getattr(rec, "confidence", None) is not None else None)})
+        except Exception:
+            continue
+    records.sort(key=lambda r: (r["frame"] if r["frame"] is not None else -1, r["object_id"]))
+    if not records:
+        return {"status": "BLOCKED", "detail": "sam-3.1 video returned zero mask records", "records": []}
+    return {"status": "OK", "model": "sam-3.1", "records": records, "usage": usage,
+            "video_frames_processed": usage.get("video_frames_processed")}
+
 def spark_visual_check(png_bytes):
     key = os.environ.get("META_MODEL_API_KEY")
     prompt = ("You are a research QC assistant. Look at this grayscale microfluidic red-blood-cell crop. "
