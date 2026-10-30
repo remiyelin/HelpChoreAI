@@ -1,0 +1,58 @@
+{
+ "concept": {
+  "P2/c4:red blood cell": [
+   "BLOCKED",
+   0
+  ],
+  "P2/c4:cell": [
+   "BLOCKED",
+   0
+  ],
+  "P1/c57:red blood cell": [
+   "BLOCKED",
+   0
+  ],
+  "P1/c57:cell": [
+   "OK",
+   1
+  ],
+  "P1/c48:red blood cell": [
+   "BLOCKED",
+   0
+  ],
+  "P1/c48:cell": [
+   "OK",
+   1
+  ],
+  "P2/c32:red blood cell": [
+   "BLOCKED",
+   0
+  ],
+  "P2/c32:cell": [
+   "OK",
+   1
+  ],
+  "P2/c43:red blood cell": [
+   "BLOCKED",
+   0
+  ],
+  "P2/c43:cell": [
+   "OK",
+   1
+  ],
+  "P1/c15:red blood cell": [
+   "BLOCKED",
+   0
+  ],
+  "P1/c15:cell": [
+   "OK",
+   1
+  ]
+ },
+ "mean_iou": {
+  "raw": 0.824,
+  "x4": 0.818
+ },
+ "better_setting": "raw",
+ "new_calls": 7
+}

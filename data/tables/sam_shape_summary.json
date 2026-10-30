@@ -1,0 +1,97 @@
+{
+ "n_queue": 961,
+ "n_sam_ok": 960,
+ "new_calls": 0,
+ "models": {
+  "BASE (hull features)": {
+   "per_patient": {
+    "P1": {
+     "kappa": 0.318,
+     "ac1": 0.343,
+     "pabak": 0.328,
+     "bal_acc": 0.657,
+     "n": 467
+    },
+    "P2": {
+     "kappa": 0.108,
+     "ac1": 0.213,
+     "pabak": 0.164,
+     "bal_acc": 0.555,
+     "n": 459
+    },
+    "P4": {
+     "kappa": 0.412,
+     "ac1": 0.42,
+     "pabak": 0.412,
+     "bal_acc": 0.718,
+     "n": 34
+    }
+   },
+   "mean_kappa": 0.279,
+   "kappa_ci95": [
+    0.169,
+    0.378
+   ]
+  },
+  "SAM ONLY": {
+   "per_patient": {
+    "P1": {
+     "kappa": 0.166,
+     "ac1": 0.198,
+     "pabak": 0.178,
+     "bal_acc": 0.582,
+     "n": 467
+    },
+    "P2": {
+     "kappa": 0.163,
+     "ac1": 0.16,
+     "pabak": 0.15,
+     "bal_acc": 0.589,
+     "n": 459
+    },
+    "P4": {
+     "kappa": 0.153,
+     "ac1": 0.308,
+     "pabak": 0.236,
+     "bal_acc": 0.573,
+     "n": 34
+    }
+   },
+   "mean_kappa": 0.161,
+   "kappa_ci95": [
+    0.038,
+    0.284
+   ]
+  },
+  "BASE+SAM": {
+   "per_patient": {
+    "P1": {
+     "kappa": 0.338,
+     "ac1": 0.353,
+     "pabak": 0.344,
+     "bal_acc": 0.668,
+     "n": 467
+    },
+    "P2": {
+     "kappa": 0.214,
+     "ac1": 0.293,
+     "pabak": 0.254,
+     "bal_acc": 0.61,
+     "n": 459
+    },
+    "P4": {
+     "kappa": 0.57,
+     "ac1": 0.605,
+     "pabak": 0.588,
+     "bal_acc": 0.789,
+     "n": 34
+    }
+   },
+   "mean_kappa": 0.374,
+   "kappa_ci95": [
+    0.27,
+    0.466
+   ]
+  }
+ }
+}

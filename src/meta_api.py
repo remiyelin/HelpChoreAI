@@ -270,6 +270,94 @@ def spark_rater(png_list, repeat=0):
         hit.write_text(json.dumps(out, indent=1))
     return out | {"_cache": "miss"}
 
+def _run_coro(coro):
+    import asyncio
+    loop = asyncio.SelectorEventLoop()  # Proactor self-pipe is sandbox-blocked (P-03)
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
+
+def sam_prompt_mask(png_bytes, prompt_text, repeat=0, tag="prompt-v1"):
+    """One SAM 3.1 Responses call with an explicit prompt (box string or concept text).
+    Requests metadata.include_confidence="true". Returns decoded masks as row spans in
+    image coords + per-mask confidence (None if the server did not emit it). Cached by
+    image+prompt+repeat. No IoU here — callers compute it with geometry.py."""
+    load_env()
+    key = os.environ.get("META_MODEL_API_KEY") or os.environ.get("MODEL_API_KEY")
+    img_hash = hashlib.sha256(png_bytes).hexdigest()
+    CACHE.mkdir(parents=True, exist_ok=True)
+    ck = _key("sam-3.1-prompt", [{"img": img_hash, "prompt": prompt_text, "repeat": repeat}], extra=tag)
+    hit = CACHE / f"{ck}.json"
+    if hit.exists():
+        out = json.loads(hit.read_text()); out["_cache"] = "hit"; return out
+    if _public():
+        return {"status": "CACHE_ONLY", "detail": "PUBLIC_MODE: live calls disabled and no cached result", "_cache": "miss"}
+    if not key:
+        return {"status": "BLOCKED", "detail": "META_MODEL_API_KEY not set"}
+    try:
+        out = _sam_prompt_run(key, png_bytes, prompt_text)
+    except Exception as e:
+        out = {"status": "BLOCKED", "detail": f"{type(e).__name__}: {e}"}
+    if out.get("status") == "OK":
+        hit.write_text(json.dumps(out, indent=1))
+    return out | {"_cache": "miss"}
+
+def _sam_prompt_run(key, png_bytes, prompt_text):
+    import base64 as _b64
+    from meta_sam_parser import parse_responses_stream, image_segmentation_format, decode_mask_to_raster
+    data_url = "data:image/png;base64," + _b64.b64encode(png_bytes).decode()
+    body = json.dumps({"model": "sam-3.1", "stream": True, "metadata": {"include_confidence": "true"}, "input": [
+        {"type": "message", "role": "user", "content": [
+            {"type": "input_text", "text": prompt_text},
+            {"type": "input_image", "image_url": data_url}]}]}).encode()
+    req = urllib.request.Request(META_BASE.rstrip("/") + "/responses", data=body,
+                                 headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+    events, completed = [], set()
+    with urllib.request.urlopen(req, timeout=120) as r:
+        for raw in r:
+            line = raw.decode("utf-8", "replace").strip()
+            if not line.startswith("data:"): continue
+            payload = line[5:].strip()
+            if payload == "[DONE]": break
+            try: data = json.loads(payload)
+            except Exception: continue
+            lane = (data.get("item_id"), data.get("output_index"), data.get("content_index"))
+            if data.get("type") == "response.output_text.done":
+                if lane not in completed: completed.add(lane); events.append(data)
+                continue
+            events.append(data)
+            part = data.get("part")
+            if (data.get("type") == "response.content_part.done" and lane not in completed
+                    and isinstance(part, dict) and part.get("type") == "output_text" and isinstance(part.get("text"), str)):
+                completed.add(lane)
+                events.append({"type": "response.output_text.done", "item_id": data.get("item_id"),
+                               "output_index": data.get("output_index"), "content_index": data.get("content_index"),
+                               "text": part["text"]})
+    async def agen():
+        for e in events: yield e
+    async def _get():
+        return await parse_responses_stream(agen(), image_segmentation_format()).final_result()
+    result = _run_coro(_get())
+    masks = []
+    import numpy as np
+    for rec in getattr(result, "records", []) or []:
+        try:
+            raster = decode_mask_to_raster(rec.mask)
+            b = rec.bounds; mw, mh = int(rec.mask.width), int(rec.mask.height)
+            sub = np.frombuffer(raster, dtype=np.uint8).reshape(mh, mw)
+            rows = []
+            for yy in range(mh):
+                xs_on = np.flatnonzero(sub[yy])
+                if len(xs_on): rows.append([int(yy + int(b.top)), int(xs_on[0] + int(b.left)), int(xs_on[-1] + int(b.left))])
+            masks.append({"rows": rows, "box": [int(b.left), int(b.top), int(b.right), int(b.bottom)],
+                          "confidence": (float(rec.confidence) if getattr(rec, "confidence", None) is not None else None)})
+        except Exception:
+            continue
+    if not masks:
+        return {"status": "BLOCKED", "detail": "sam-3.1 returned zero masks", "masks": []}
+    return {"status": "OK", "model": "sam-3.1", "masks": masks, "records": len(masks)}
+
 def spark_visual_check(png_bytes):
     key = os.environ.get("META_MODEL_API_KEY")
     prompt = ("You are a research QC assistant. Look at this grayscale microfluidic red-blood-cell crop. "
