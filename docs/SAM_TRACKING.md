@@ -16,10 +16,14 @@ and convexity defects (same-grid hull). Records were keyed by (frame, object
 id) because stream output can arrive out of order; ids were never joined
 across clips or re-entries.
 
-Demo: `docs/media/sam_tracking_demo.mp4` (~10 s, best-tracked clip: median
-centroid distance 0.28 px) and `docs/media/sam_tracking_keyframes.png` (6
-keyframes; amber = SAM mask, teal = author contour; the strip also contains an
-untracked dark cell that is not the prompted object).
+Demo: `docs/media/sam_tracking_demo.mp4` (~10 s) and
+`docs/media/sam_tracking_keyframes.png` (6 keyframes; amber = SAM mask, teal =
+author contour). The demo clip was re-run with boxes on **both** cells in the
+strip (the tracked cell and its neighbour, one extra request, 66 billed frames)
+so no viewer can mistake the neighbour for a miss; it is rendered at a uniform
+scale on both axes (3x, cropped horizontally around the cells) — an earlier
+render stretched only vertically and distorted cell shape. The per-cell
+numbers below are unchanged (single-object runs).
 
 ## Track agreement (1,598 author frames, 20 cells)
 
@@ -52,6 +56,22 @@ the tracked masks (min ~0.93, median ~0.96 in both): unlike the per-frame
 box-prompt masks (P-06), video-propagated masks show **no** health separation
 in solidity. Propagated masks are temporally smoothed, which plausibly erases
 exactly the transient concavities that carry the spicule signal.
+
+## Position gate (guardrail, no API calls)
+
+Rule (`sam_tracking.position_gate`, applied to the cached per-frame table):
+flag a frame when the SAM mask centroid is more than **5 px** from the lab
+tracker's `pos_x/pos_y`; flag the whole track when that happens on more than
+**10%** of its frames. On the 20 cached tracks the gate **catches all 3
+identity-lag tracks** (flagged-frame shares 0.988, 0.988, 0.980) and **falsely
+flags none of the 17 good tracks** (worst good track: 1.4% of frames over
+threshold). Per-track output: `data/tables/sam_tracking_gate.csv`. A synthetic
+drifting track is caught and a steady track with a brief 5-frame excursion is
+not flagged (unit-tested). Demonstration: `docs/media/sam_tracking_gate_demo.mp4`
+shows the worst failing track from cache (amber SAM mask, red X = lab position,
+uniform 3x scale, window following the lab position) — the gate catches this
+track at 98.8% flagged frames. Operational rule: never consume a SAM video
+track that the gate flags; fall back to per-frame box prompts (P-06) there.
 
 ## Cost
 

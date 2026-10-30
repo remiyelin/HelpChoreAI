@@ -141,6 +141,17 @@ def index_records(records):
     return {(r["frame"], r["object_id"]): r for r in records}
 
 
+def position_gate(frames: pd.DataFrame, thresh_px: float = 5.0, max_frac: float = 0.10) -> pd.DataFrame:
+    """Position gate (no API calls): flag a frame when the SAM centroid is more than
+    thresh_px from the lab tracker's pos_x/pos_y; flag the whole track when that
+    happens on more than max_frac of its frames. Catches silent identity lag, where
+    SAM returns confident cell-shaped masks hundreds of pixels behind the cell."""
+    g = (frames.groupby(["patient", "date", "cell", "author_health"])["centroid_dist_px"]
+         .apply(lambda s: float((s > thresh_px).mean())).reset_index(name="frac_frames_over_thresh"))
+    g["track_flagged"] = g.frac_frames_over_thresh > max_frac
+    return g
+
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--probe", action="store_true")
     args = ap.parse_args()
