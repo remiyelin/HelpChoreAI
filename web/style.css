@@ -17,7 +17,7 @@ th:first-child,td:first-child{text-align:left}pre{white-space:pre-wrap;font-size
 select{font:inherit;padding:.3rem}label{margin-right:1rem}
 .imgwrap{position:relative;margin:.4rem 0;background:#111}.imgwrap img{display:block;width:100%}
 .imgwrap svg{position:absolute;inset:0;width:100%;height:100%}
-.cropwrap{max-width:520px}.cropwrap img{image-rendering:pixelated;height:104px;object-fit:fill}
+.cropwrap{max-width:520px}.cropwrap img{image-rendering:pixelated;height:auto}
 .hint{font-size:.82rem;color:var(--mut)}.mono{font-family:Consolas,monospace}
 input[type=number]{font:inherit;width:6rem;padding:.3rem}
 textarea{font:inherit;padding:.4rem;border:1px solid var(--line);max-width:100%}

@@ -51,7 +51,7 @@ def _tracked_files() -> set[str]:
 def chain_hashes() -> dict:
     tracked = _tracked_files()
     manifest_rels = sorted(r for r in tracked if r.startswith("data/fetch_manifest/") and r.endswith(".json")
-                           and not Path(r).name.startswith("holdout_"))
+                           and "holdout" not in Path(r).name.lower())
     table_names = ["per_run.csv", "per_visit_adjusted_v3.csv", "visit_pairs_decisions_v3.csv"]
     table_rels = [f"data/tables/{n}" for n in table_names if f"data/tables/{n}" in tracked]
     hashed = sorted(manifest_rels + table_rels)

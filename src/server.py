@@ -87,9 +87,9 @@ def frame_png(patient, date, cell, crop=True):
         pts = [[round(float(x - x0), 1), round(float(y), 1)] for x, y in contour[::3]]
         full = [[round(float(x), 1), round(float(y), 1)] for x, y in contour[::3]]
         fullres = [[round(float(x - x0), 1), round(float(y), 1)] for x, y in contour]
-        return png_gray(img), {"frame": frame_no, "pos_x": round(pos_x, 1), "crop_x0": x0, "crop_w": 200, "contour_crop": pts, "contour_full": full, "contour_crop_fullres": fullres}
+        return png_gray(img), {"frame": frame_no, "pos_x": round(pos_x, 1), "crop_x0": x0, "crop_w": 200, "frame_height": h, "frame_width": w, "contour_crop": pts, "contour_full": full, "contour_crop_fullres": fullres}
     pts = [[round(float(x), 1), round(float(y), 1)] for x, y in contour[::3]]
-    return png_gray(img), {"frame": frame_no, "pos_x": round(pos_x, 1), "contour_full": pts}
+    return png_gray(img), {"frame": frame_no, "pos_x": round(pos_x, 1), "frame_height": h, "frame_width": w, "contour_full": pts}
 
 def public_mode():
     return os.environ.get("PUBLIC_MODE") == "1"
@@ -232,12 +232,19 @@ class H(BaseHTTPRequestHandler):
             if not wav: return self.send_json({"status": "BLOCKED", "detail": "empty audio"})
             return self.send_json(meta_api.transcribe_audio(wav, mode=body.get("mode", "PUSH_TO_TALK")))
         if self.path == "/api/signoff":
-            f = ROOT / "data" / "signoffs.json"
-            rows = json.loads(f.read_text()) if f.exists() else []
-            rows.append({"patient": body.get("patient"), "from": body.get("from"), "to": body.get("to"),
-                         "decision": body.get("decision"), "note": body.get("note", "")})
-            f.write_text(json.dumps(rows, indent=1))
-            return self.send_json({"saved": True, "signoffs": len(rows)})
+            payload_sha = str(body.get("payload_sha256") or "")
+            report_sha = str(body.get("report_sha256") or "")
+            import re as _re
+            if not _re.fullmatch(r"[0-9a-f]{64}", payload_sha) or not _re.fullmatch(r"[0-9a-f]{64}", report_sha):
+                return self.send_json({"error": "sign-off requires payload_sha256 and report_sha256 of the active report (generate a report first)"}, 400)
+            import datetime as _dt
+            entry = {"ts": _dt.datetime.now(_dt.timezone.utc).isoformat(), "patient": body.get("patient"),
+                     "from": body.get("from"), "to": body.get("to"), "decision": body.get("decision"),
+                     "note": body.get("note", ""), "payload_sha256": payload_sha, "report_sha256": report_sha}
+            f = ROOT / "data" / "signoffs.jsonl"
+            f.parent.mkdir(parents=True, exist_ok=True)
+            with f.open("a", encoding="utf-8") as fh: fh.write(json.dumps(entry) + "\n")
+            return self.send_json({"saved": True, "ts": entry["ts"], "payload_sha256": payload_sha, "report_sha256": report_sha})
         if self.path == "/api/review":
             rev = json.loads(REVIEWS.read_text()) if REVIEWS.exists() else []
             rev = [r for r in rev if not (r["patient"] == body["patient"] and str(r["date"]) == str(body["date"]) and int(r["cell"]) == int(body["cell"]))]
