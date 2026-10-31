@@ -81,12 +81,12 @@ def main():
 
 class RestrictedUnpickler(pickle.Unpickler):
     """Numpy-only restricted unpickler for authors' Python-2 .p track files. Never raw pickle.load."""
-    ALLOWED = {("numpy", "ndarray"), ("numpy.core.multiarray", "_reconstruct"), ("numpy.core.multiarray", "scalar"),
-               ("numpy", "dtype"), ("numpy.dtypes", "Float64DType"), ("numpy.dtypes", "Int64DType"),
-               ("builtins", "list"), ("builtins", "dict"), ("builtins", "tuple"), ("builtins", "set"),
-               ("__builtin__", "list"), ("__builtin__", "dict"), ("__builtin__", "tuple")}
+    ALLOWED = {("numpy", "ndarray"), ("numpy", "dtype"),
+               ("numpy.core.multiarray", "_reconstruct"), ("numpy.core.multiarray", "scalar"),
+               ("numpy._core.multiarray", "_reconstruct"), ("numpy._core.multiarray", "scalar"),
+               ("builtins", "list"), ("builtins", "dict"), ("builtins", "tuple")}
     def find_class(self, module, name):
-        if (module, name) in self.ALLOWED or module.startswith("numpy"):
+        if (module, name) in self.ALLOWED:
             return super().find_class(module, name)
         raise pickle.UnpicklingError(f"forbidden class {module}.{name}")
 

@@ -98,6 +98,20 @@ def test_no_key_report_and_tamper_use_committed_or_409(port, tmp_path, monkeypat
     assert not (keys_dir / "private_key.pem").exists()
 
 
+def test_pairs_and_visits_are_v3_plus_sealed(port):
+    code, body = get(port, "/api/pairs")
+    pairs = json.loads(body)
+    assert code == 200 and len(pairs) == 32
+    assert sum(p.get("cohort") == "sealed" for p in pairs) == 11
+    assert sum(p.get("cohort") == "dev" for p in pairs) == 21
+    code, body = get(port, "/api/visits")
+    visits = json.loads(body)
+    assert code == 200 and any(v.get("cohort") == "sealed" for v in visits)
+    code, body = get(port, "/api/longitudinal/P3")
+    long = json.loads(body)
+    assert code == 200 and long["pairs"] and all(p.get("cohort") == "sealed" for p in long["pairs"])
+
+
 def test_public_mode_cache_only_models(monkeypatch, tmp_path):
     monkeypatch.setenv("PUBLIC_MODE", "1")
     monkeypatch.setattr(meta_api, "CACHE", tmp_path)

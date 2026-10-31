@@ -26,7 +26,7 @@
 </section>
 <section id="view-overlay" hidden>
   <h2>Per-cell overlay review — adjudication queue</h2>
-  <p>Classifier is triage only (LOPO κ ≈ 0.24; contour roughness did not improve it). Low-confidence and disagreeing cells wait here for human labels. Your label is the second rater: κ / Gwet AC1 vs the author label update live.</p>
+  <p>Classifier is triage only (contour roughness did not improve it). Low-confidence and disagreeing cells wait here for human labels. Your label is the second rater: κ / Gwet AC1 vs the author label update live.</p>
   <div class="row"><div id="queueList" class="card scroll"></div>
   <div class="card"><div class="imgwrap"><img id="stripImg" alt="microfluidic strip (real frame)"><svg id="stripSvg" viewBox="0 0 1280 48"><polygon id="stripPoly" points="" fill="none" stroke="#dc2626" stroke-width="2"/></svg></div>
   <div class="imgwrap cropwrap"><img id="cropImg" alt="zoomed cell crop (real frame)"><svg id="cellSvg" viewBox="0 0 200 48"><polygon id="cellPoly" points="" fill="rgba(13,118,110,.18)" stroke="#0d766e" stroke-width="1.5"/></svg></div>
@@ -43,7 +43,7 @@
   <div><button id="btnNaive">Naive</button> <button id="btnAdj" class="active">Flow-adjusted</button> <span class="hint">Naive reads the raw change at face value; flow-adjusted removes the flow artefact before the RCV decision — the QC gate is what stops flow/QC swings being read as drug effects.</span></div>
   <div id="decisionCard" class="card"></div>
   <div class="card"><h3>Longitudinal trajectory — selected patient</h3><div id="longChart"></div>
-  <p class="hint">Gray = raw, teal = flow-adjusted (±1.96·SD band). Red zones = QC-blocked visits (skip rate &gt; 0.25).</p></div>
+  <p class="hint">Gray = raw, teal = flow-adjusted (RCV95 band). Red zones = QC-blocked visits (skip rate &gt; 0.25).</p></div>
   <div class="card"><h3>Trial Run-Count Planner</h3>
   <label>Target MDC95 <input id="plTarget" type="number" step="0.01" value="0.05"></label>
   <label>Expected fraction p <input id="plP" type="number" step="0.01" value="0.40"></label>
@@ -51,7 +51,7 @@
   <label>Cells per run <input id="plCells" type="number" step="10" value="110"></label>
   <button id="btnPlan">Calculate runs needed</button> <span id="planOut"></span>
   <p class="hint">Per-visit variance = φ·p(1−p)/N, N = runs × cells/run (v3: label variance excluded — classifier disagreement is not fraction noise; docs/STATS_VALIDATION.md).</p></div>
-  <p>Reference flow 0.016 µL/s. Patient-intercept GLM + cluster bootstrap (run-level, B=400). QC-blocked pairs (skip rate &gt; 0.25 or low kept cells) are refused a decision.</p>
+  <p>Reference flow 0.016 µL/s. Patient-intercept GLM + cluster bootstrap (run-level, B=2000). QC-blocked pairs (skip rate &gt; 0.25 or low kept cells) are refused a decision.</p>
 </section>
 <section id="view-report" hidden>
   <h2>Verified report — Checker gate</h2>

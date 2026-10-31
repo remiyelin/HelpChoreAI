@@ -152,3 +152,13 @@ re-fitted or re-worded to force a match):
 - **(e) SAM spicule concavity — UNMEASURED.** Held uncalled for the same
   budget reason (no SAM run on holdout cells); no holdout SAM number is
   claimed. Dev reference only: solidity difference −0.014, defects +0.60.
+
+## Post-unsealing reproducibility note (2026-10-31, P-22)
+
+`src/step12_holdout_eval.py` was committed after unsealing and calls only
+functions frozen at eval-v1 (`src/step4b_model.py`: `fit_glm`,
+`standardise`, and the frozen `REF_FLOW`/`B`/`SEED`/`TREATMENT` constants),
+unchanged. It recreates `data/tables/sealed_results.csv` from
+`per_run_holdout.csv` in memory to 6 decimals (test:
+`tests/test_holdout_eval.py`, skipped when the holdout data is absent);
+the committed file itself is not regenerated.

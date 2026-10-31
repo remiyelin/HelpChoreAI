@@ -137,7 +137,7 @@ def main():
         print(f" cell {q.patient}/{q.date}/c{q.cell}: SAM {sam.get('status')} IoU={sam.get('iou_vs_author')} ({sam.get('_cache')}) "
               f"Spark {spark.get('status')} ({spark.get('_cache')})")
     pair_rows = []
-    dec = pd.read_csv(TABLES / "visit_pairs_decisions_v2.csv")
+    dec = pd.read_csv(TABLES / "visit_pairs_decisions_v3.csv")
     for r in dec.to_dict("records"):
         env = checker.sign_payload(checker.build_payload(r["patient"], r["from"], r["to"]))
         payload = env["payload"]

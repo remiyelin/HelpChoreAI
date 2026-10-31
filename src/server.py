@@ -135,7 +135,7 @@ def live_status():
             "muse_spark_cloud": "LIVE" if os.environ.get("META_MODEL_API_KEY") else "OFFLINE (set META_MODEL_API_KEY)",
             "muse_voice_transcribe": "LIVE" if os.environ.get("META_MODEL_API_KEY") else "OFFLINE (set META_MODEL_API_KEY)",
             "open_weight_auditor": "LIVE" if os.environ.get("BASETEN_API_KEY") else "OFFLINE (set BASETEN_API_KEY)",
-            "open_weight_model": "meta-models/muse-spark-open-1026 via Baseten"}
+            "open_weight_model": "meta-models/muse-spark-open via Baseten"}
 
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a): pass
@@ -150,8 +150,17 @@ class H(BaseHTTPRequestHandler):
             if path == "/api/benchmark":
                 f = TABLES / "live_benchmark_summary.json"
                 return self.send_json(json.loads(f.read_text()) if f.exists() else {"status": "NOT_RUN", "detail": "run: uv run python src/run_live_benchmark.py"})
-            if path == "/api/visits": return self.send_json(pd.read_csv(TABLES / "per_visit_adjusted_v2.csv").to_dict("records"))
-            if path == "/api/pairs": return self.send_json(pd.read_csv(TABLES / "visit_pairs_decisions_v2.csv").to_dict("records"))
+            if path == "/api/visits":
+                dev_v = pd.read_csv(TABLES / "per_visit_adjusted_v3.csv"); dev_v["cohort"] = "dev"
+                sealed_v = pd.read_csv(TABLES / "per_visit_holdout.csv")
+                sealed_v["frac_adj"] = sealed_v["frac_health1"]; sealed_v["var"] = 0.0
+                sealed_v["cohort"] = "sealed"
+                cols = [c for c in dev_v.columns if c in sealed_v.columns or c == "cohort"]
+                return self.send_json(pd.concat([dev_v, sealed_v[cols]], ignore_index=True).to_dict("records"))
+            if path == "/api/pairs":
+                dev_p = pd.read_csv(TABLES / "visit_pairs_decisions_v3.csv"); dev_p["cohort"] = "dev"
+                sealed_p = pd.read_csv(TABLES / "sealed_results.csv"); sealed_p["cohort"] = "sealed"
+                return self.send_json(pd.concat([dev_p, sealed_p], ignore_index=True).astype(object).fillna("").to_dict("records"))
             if path == "/api/queue":
                 q = pd.read_csv(TABLES / "adjudication_queue.csv")
                 targets = {}
@@ -193,8 +202,17 @@ class H(BaseHTTPRequestHandler):
                 return self.send_json(c or {"error": "contour unavailable"}, 200 if c else 404)
             if path.startswith("/api/longitudinal/"):
                 patient = path.split("/")[-1]
-                raw = pd.read_csv(TABLES / "per_visit.csv"); adj = pd.read_csv(TABLES / "per_visit_adjusted_v2.csv")
-                dec = pd.read_csv(TABLES / "visit_pairs_decisions_v2.csv")
+                sealed_dec = pd.read_csv(TABLES / "sealed_results.csv")
+                if (sealed_dec.patient == patient).any():
+                    adj = pd.read_csv(TABLES / "per_visit_holdout.csv")
+                    m = adj[adj.patient == patient].copy()
+                    m["frac_adj"] = m["frac_health1"]; m["var"] = 0.0; m["cohort"] = "sealed"
+                    m["frac_raw"] = m["frac_health1"]
+                    m["qc_blocked"] = m.skip_rate > 0.25
+                    prs = sealed_dec[sealed_dec.patient == patient].copy(); prs["cohort"] = "sealed"
+                    return self.send_json({"visits": m.to_dict("records"), "pairs": prs.to_dict("records")})
+                raw = pd.read_csv(TABLES / "per_visit.csv"); adj = pd.read_csv(TABLES / "per_visit_adjusted_v3.csv")
+                dec = pd.read_csv(TABLES / "visit_pairs_decisions_v3.csv")
                 m = adj[adj.patient == patient].copy()
                 m["frac_raw"] = [float(raw[(raw.patient == patient) & (raw.date.astype(str) == str(d))].frac_health1.iloc[0]) for d in m.date]
                 m["qc_blocked"] = m.skip_rate > 0.25

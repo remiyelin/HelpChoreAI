@@ -35,7 +35,7 @@ def test_real_frame_png_for_sample_cell():
 
 def test_longitudinal_qc_flag_present():
     import pandas as pd
-    v = pd.read_csv(server.TABLES / "per_visit_adjusted_v2.csv")
+    v = pd.read_csv(server.TABLES / "per_visit_adjusted_v3.csv")
     assert "var" in v.columns and (v.skip_rate > 0.25).any()
 
 def test_live_status_never_claims_live_without_keys(monkeypatch):

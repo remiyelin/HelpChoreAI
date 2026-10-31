@@ -24,4 +24,4 @@ build-backend = "hatchling.build"
 packages = ["src"]
 
 [tool.pytest.ini_options]
-addopts = ["--ignore=pytest-of-Lenovo"]
+norecursedirs = ["pytest-of-*", ".pytest_cache", ".git", ".venv", ".uv-cache", ".tmp", "vendor", "data", "web", "docs", "*.egg"]

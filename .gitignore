@@ -35,5 +35,6 @@ data/fetch_manifest/fetch_log_step1.json
 private/
 pytest-of-*/
 data/signoffs.json
+data/signoffs.jsonl
 docs/media/p03_overlay_*.png
 docs/media/rater_example_*.png

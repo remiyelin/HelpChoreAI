@@ -40,6 +40,6 @@ Result over 21 consecutive visit pairs:
    (kappa/Gwet AC1) is measured in the adjudication UI.
 3. Treatment context (dasatinib/lithium periods from the paper) is not yet joined to visit pairs;
    no pair may be described as natural progression.
-4. SAM 3.1 audit still blocked: sandbox cannot read `C:\Users\Lenovo\.config\muse\auth.json`
-   (access denied), and Muse Code login is not a Meta Model API key. Live check runs once
+4. SAM 3.1 audit still blocked: sandbox cannot read the local Muse Code
+   auth file (access denied), and Muse Code login is not a Meta Model API key. Live check runs once
    `META_MODEL_API_KEY` is exported (harness: `src/sam_audit.py`).

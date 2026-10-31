@@ -5,9 +5,8 @@
 ## The problem
 
 Deformability cytometry measures peripheral target engagement, but hydrodynamic
-shear stretches cells (confounding health readouts) and laboratory protocol
-drift (waiting time, high skip rates) causes false alarms in naive binomial
-statistics. In our dev data the naive binomial rule false-alarms at 32.2%,
+shear stretches cells (confounding health readouts) and high skip rates are
+associated with false alarms in naive binomial statistics. In our dev data the naive binomial rule false-alarms at 32.2%,
 and raw health fractions fall with flow in every patient — a flow artefact
 that looks exactly like a treatment effect if you do not adjust for it.
 
