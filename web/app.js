@@ -80,10 +80,12 @@ function renderPairs(){$('#pairsTable').innerHTML='<table><tr><th>Pair</th><th>�
 async function loadQueue(){queue=await j('/api/queue');
  const list=$('#queueList');list.textContent='';
  queue.slice(0,200).forEach((q,i)=>{const d=document.createElement('div');d.className='qitem';d.dataset.i=i;d.textContent=`${q.has_frame?'[REAL FRAME] ':''}${q.patient} ${q.visit} cell ${q.cell} · author health=${q.health} · pred=${q.pred} · conf=${Number(q.confidence).toFixed(2)}`;list.appendChild(d)});
- document.querySelectorAll('.qitem').forEach(el=>el.onclick=()=>selectCell(queue[+el.dataset.i]));}
+ document.querySelectorAll('.qitem').forEach(el=>el.onclick=()=>selectCell(queue[+el.dataset.i]));
+ if(queue.length)selectCell(queue[0]);}
 function clearOverlays(){$('#cellPoly').setAttribute('points','');$('#stripPoly').setAttribute('points','');
  document.querySelectorAll('#cellSvg polygon:not(#cellPoly)').forEach(p=>p.remove());$('#samBox').textContent='';}
 async function selectCell(q){selCell=q;clearOverlays();
+ document.querySelectorAll('.qitem').forEach(el=>el.classList.toggle('active',queue[+el.dataset.i]===q));
  const c=await j(`/api/cell/${q.patient}/${q.date}/${q.cell}`);
  const info=await j(`/api/frameinfo/${q.patient}/${q.date}/${q.cell}`);
  const fh=info.frame_height||48, fw=info.frame_width||1280;

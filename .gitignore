@@ -12,6 +12,7 @@ private_key*
 auth.json
 .env
 .env.*
+!.env.example
 *.key
 
 # Extracted raw research data (re-fetchable via tools/figshare_ingest.*)
