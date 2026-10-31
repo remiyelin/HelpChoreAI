@@ -1,0 +1,113 @@
+# Pre-registration — Holdout Evaluation (P-11)
+
+Frozen **before** any sealed holdout data (P3/P5) is touched. This task made
+0 API calls and did not fetch, open, or list any P3/P5 data file. All
+predictions below are derived strictly from the dev findings (P1/P2/P4)
+cited inline. The Unseal Log at the bottom is reserved for P-12.
+
+## 1. Frozen code
+
+- Frozen commit (HEAD of this pre-registration step, pipeline as evaluated):
+  `f6aa1e1c91326f0ac9fb7eb13056aa667b2f10e4`
+  (`feat(agent): verifiable audit agent with in-tool checks and human escalation`)
+- Pipeline entry points at that commit: `src/step4b_model.py` (v3 statistics),
+  `src/checker.py` (pinned-key Checker on the v3 tables), `src/rater_spark.py`
+  + `src/meta_api.py` (cloud rater), `src/rater_open.py` (open-weight rater),
+  `src/sam_full_batch.py` (SAM shape features), `src/agent.py` /
+  `src/agent_tools.py` (verifiable audit agent).
+- This pre-registration is committed on top of the frozen commit; any later
+  pipeline change requires a new pre-registration amendment, recorded below
+  the Unseal Log, never a silent edit to the frozen sections.
+
+## 2. Measurand and flow standardisation (frozen)
+
+- Measurand: `health==1` fraction among `shape!=0`, per run, kept-cell weighted
+  per visit.
+- Reference flow rate: **0.016 µL/s**.
+- Model: **unpenalised binomial GLM** (statsmodels) on run-level counts
+  (successes = `n_health1`, trials = `n_kept`):
+  `logit(p) = patient intercept + b * log(flow)`.
+  The log-flow term is retained (dev: ΔAIC = 913 vs no-flow, slope
+  b = −0.322). No penalisation, no probability-ratio adjustment.
+- Standardisation: each run is shifted to the reference flow on the
+  **log-odds** scale (`eta_ref − eta_run`); visit value is the kept-cell
+  weighted mean of standardised runs.
+
+## 3. Uncertainty (frozen)
+
+- **Cluster bootstrap**: run-level clusters resampled **within visit**,
+  kept-cell weighted, **B = 2000**, **seed 20261026**.
+- Visit variance is the bootstrap variance of the standardised visit fraction.
+  The label-variance term is excluded from the RCV (sensitivity column only).
+
+## 4. QC and decision rule (frozen)
+
+- QC gate: a visit is QC-blocked when its skip rate **> 0.25** (skip rate
+  ≤ 0.25 passes); pairs touching a QC-blocked visit are `indeterminate_QC`.
+- RCV95 for a pair = `t(0.975, df = runs_a + runs_b − 2) * sqrt(var_a + var_b)`
+  (few-cluster t calibration with run-count degrees of freedom; dev
+  simulation false-exceeds rate 0.064 at nominal 0.05, vs 0.322 for the
+  naive binomial rule).
+- Decision: `exceeds_RCV` if `|delta_adj| > RCV95`, else `within_RCV`;
+  QC-blocked pairs are `indeterminate_QC` regardless of the delta.
+
+## 5. Second-rater and auditor protocols (frozen)
+
+- Cloud rater: `muse-spark-1.3`, the exact `RATER_PROMPT` and enforced
+  `RATER_SCHEMA` of P-05, up to 3 upscaled (4x) track frames per cell,
+  `cannot_tell` never mapped to a label.
+- Open-weight rater: `meta-models/muse-spark-open` via Baseten, identical
+  prompt/schema/images (P-09); `message.content` only, Python schema
+  validation, one retry on invalid JSON, then null.
+- Reports: Checker-signed (pinned key `data/checker/public_key.hex`),
+  Baseten audit fail-closed to BLOCK, agent loop of P-10 with in-tool
+  verification and `AWAITING_SIGNOFF` until researcher sign-off.
+- SAM shape: SAM 3.1 raw box prompts, same-grid solidity (≤ 1 by
+  construction), features as in `docs/SAM_SPICULES.md`.
+
+## 6. Pre-registered predictions for the holdout (P3/P5)
+
+Stated before unsealing, as explicit ranges. "Visit"/"pair" refer to the
+holdout visits and visit pairs as defined by the frozen pipeline.
+
+**(a) Flow slope.** Dev: health fraction falls with flow in every dev patient
+(run-level Spearman rho −0.50…−0.62, p < 1e-6; GLM slope −0.322).
+Prediction: **80–100%** of holdout visits exhibit a negative within-visit
+flow slope, and the pooled holdout GLM slope is negative, in
+**−0.60…−0.10**.
+
+**(b) Variance reduction.** Dev: health overdispersion phi ~1.1–12 before
+adjustment; post-flow phi 2.15–5.57 (reduced, not eliminated), and flow
+adjustment roughly doubled bootstrap power at +0.10 (0.77 vs 0.51).
+Prediction: flow adjustment reduces within-visit overdispersion/variance in
+**60–90%** of holdout visits, while residual phi stays > 1 in the majority
+of visits.
+
+**(c) Decision changes.** Dev: naive binomial calls 14/21 pairs "exceed" vs
+6/21 under the frozen v3 rule + QC; 8/21 pairs are QC-indeterminate.
+Prediction: the frozen-rule decision differs from the naive binomial
+decision for **25–50%** of holdout pairs, and **20–50%** of holdout pairs
+are `indeterminate_QC` at the 0.25 skip-rate gate. Of decidable pairs,
+**20–45%** are `exceeds_RCV` (dev: 6/13 decidable).
+
+**(d) Second-rater agreement** (vs author, cannot_tell excluded; dev values
+in brackets). Cloud `muse-spark-1.3` [AC1 0.392, PABAK 0.334,
+cannot_tell 0.438]: predicted holdout AC1 **0.10–0.65**, PABAK **0.05–0.60**,
+cannot_tell **0.30–0.55**. Open-weight `muse-spark-open` [AC1 0.464,
+PABAK 0.448, cannot_tell 0.275]: predicted holdout AC1 **0.20–0.70**,
+PABAK **0.20–0.65**, cannot_tell **0.15–0.40**. Head-to-head cloud vs
+open-weight agreement is predicted at AC1 **0.55–0.90** on both-rated
+cells (dev 0.772).
+
+**(e) SAM 3.1 spicule concavity.** Dev (960 cells): SAM solidity
+health=1 **0.940** vs health=0 **0.954** (difference −0.014); convexity
+defects >1px 1.97 vs 1.37 (+0.60); BASE+SAM raised LOPO kappa over BASE
+in every dev patient.
+Prediction: on the holdout, mean SAM solidity for health=1 cells is lower
+than for health=0 cells by **0.005–0.025**, mean convexity defects are
+higher for health=1 by **0.3–0.9**, and BASE+SAM LOPO kappa is **not
+worse** than BASE alone.
+
+## Unseal Log
+
+(Reserved for P-12. No entries yet — no holdout data has been touched.)
