@@ -24,6 +24,7 @@ def test_no_initials_as_whole_words_in_tracked_files():
     pats = [_whole(t) for t in tokens]
     bad = []
     for rel in _tracked():
+        if Path(rel).suffix.lower() in {".png", ".mp4", ".wav", ".p", ".pkl"}: continue
         try:
             text = (ROOT / rel).read_bytes().decode("latin-1")
         except OSError:

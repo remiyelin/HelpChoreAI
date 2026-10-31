@@ -270,6 +270,59 @@ def spark_rater(png_list, repeat=0):
         hit.write_text(json.dumps(out, indent=1))
     return out | {"_cache": "miss"}
 
+def _validate_rater(parsed):
+    if not isinstance(parsed, dict) or set(parsed) != set(RATER_SCHEMA["required"]):
+        raise ValueError("schema-violating rater reply")
+    if parsed["spiculated"] not in ("yes", "no", "cannot_tell"): raise ValueError("bad spiculated value")
+    if not (0 <= float(parsed["confidence"]) <= 1): raise ValueError("bad confidence")
+    if parsed["image_quality"] not in ("ok", "poor"): raise ValueError("bad image_quality")
+    if not isinstance(parsed["spicule_points"], list) or not isinstance(parsed["reason"], str):
+        raise ValueError("bad spicule_points/reason")
+    parsed["spicule_points"] = [{"frame": int(p["frame"]), "x": max(0, min(1000, int(p["x"]))),
+                                 "y": max(0, min(1000, int(p["y"])))} for p in parsed["spicule_points"]]
+    return parsed
+
+def baseten_rater(png_list, repeat=0):
+    """Open-weight second rater: meta-models/muse-spark-open on Baseten, same prompt/schema/images
+    as spark_rater. Parses message.content only (reasoning_content ignored), validates the JSON
+    in Python, retries once on invalid JSON, then falls back to null (BLOCKED) — never fabricates.
+    Cached by image hashes + repeat in data/api_cache/ like every paid call."""
+    load_env()
+    key = os.environ.get("BASETEN_API_KEY")
+    hashes = [hashlib.sha256(p).hexdigest() for p in png_list]
+    CACHE.mkdir(parents=True, exist_ok=True)
+    ck = _key("muse-spark-open-rater", [{"imgs": hashes, "repeat": repeat, "prompt": RATER_PROMPT}], extra="rater-open-v1")
+    hit = CACHE / f"{ck}.json"
+    if hit.exists():
+        out = json.loads(hit.read_text()); out["_cache"] = "hit"; out["_new_calls"] = 0; return out
+    if _public():
+        return {"status": "CACHE_ONLY", "detail": "PUBLIC_MODE: live calls disabled and no cached result", "_cache": "miss", "_new_calls": 0}
+    if not key:
+        return {"status": "BLOCKED", "detail": "BASETEN_API_KEY not set", "_new_calls": 0}
+    content = [{"type": "text", "text": RATER_PROMPT}]
+    for i, png in enumerate(png_list):
+        content.append({"type": "text", "text": f"frame {i + 1} of {len(png_list)}"})
+        content.append({"type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.b64encode(png).decode()}})
+    body = {"model": "meta-models/muse-spark-open",
+            "messages": [{"role": "user", "content": content}],
+            "response_format": {"type": "json_schema", "json_schema": {"name": "rbc_second_rater", "strict": True, "schema": RATER_SCHEMA}}}
+    last_err = None
+    for attempt in range(2):  # initial call + at most one retry on invalid JSON
+        try:
+            resp = _post(BASETEN_URL, key, body, timeout=180)
+            msg = resp.get("choices", [{}])[0].get("message", {})
+            text = msg.get("content", "")  # reasoning_content deliberately ignored
+            if isinstance(text, list):
+                text = "".join(p.get("text", "") for p in text if isinstance(p, dict))
+            parsed = _validate_rater(json.loads(text))
+            out = {"status": "OK", "model": "meta-models/muse-spark-open", "rater": parsed,
+                   "raw_id": resp.get("id"), "_new_calls": attempt + 1}
+            hit.write_text(json.dumps(out, indent=1))
+            return out | {"_cache": "miss"}
+        except Exception as e:
+            last_err = f"{type(e).__name__}: {e}"
+    return {"status": "BLOCKED", "detail": last_err, "rater": None, "_cache": "miss", "_new_calls": 2}
+
 def _run_coro(coro):
     import asyncio
     loop = asyncio.SelectorEventLoop()  # Proactor self-pipe is sandbox-blocked (P-03)

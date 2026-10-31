@@ -126,3 +126,24 @@ Intra-rater (20 repeats): {'n_pairs': 20, 'n_both_rated': 11, 'raw_agreement_3wa
 ```
 
 Example crops with drawn spicule points: ['docs/media/rater_example_1.png (P2 cell 23: yes, author 1)', 'docs/media/rater_example_2.png (P2 cell 1: yes, author 1)', 'docs/media/rater_example_3.png (P1 cell 42: yes, author 1)', 'docs/media/rater_example_4.png (P1 cell 20: yes, author 1)', 'docs/media/rater_example_5.png (P1 cell 91: no, author 0)', 'docs/media/rater_example_6.png (P1 cell 24: cannot_tell, author 0)']. Detail: data/tables/rater_spark.csv. New API calls this run: 100 (all cached; reruns free).
+
+## Open-weight second rater — muse-spark-open via Baseten (P-09)
+
+Exact same protocol as above: same 80 stratified cells (40 author health=1, 40 health=0 across
+P1/P2/P4, seed 42), same upscaled 4x track frames, exact `RATER_PROMPT` and `RATER_SCHEMA`.
+The model is called directly as `meta-models/muse-spark-open` on Baseten; only
+`message.content` is parsed (`reasoning_content` ignored), the JSON is validated in Python
+against the schema, with one retry on invalid JSON before falling back to null.
+No retry was needed. Author labels are never sent. Detail: data/tables/rater_open.csv
+(`src/rater_open.py`, `meta_api.baseten_rater`). New API calls: 80 first calls, 0 retries
+(all cached; reruns free).
+
+Results (first rating, n_ok=80/80): confusion vs author (cannot_tell excluded):
+TP=16 FN=10 FP=6 TN=26. Cohen kappa 0.434 (95% CI 0.201–0.663); Gwet AC1 0.464
+(95% CI 0.245–0.694); PABAK 0.448; cannot_tell share 0.275.
+For comparison, cloud muse-spark-1.3 (P-05) on the same cells: kappa 0.266, AC1 0.392,
+PABAK 0.334, cannot_tell share 0.438.
+
+Head-to-head, cloud muse-spark-1.3 vs open-weight muse-spark-open (same 80 cells):
+80 pairs, 38 both rated yes/no; 3-way raw agreement 0.600; on the both-rated subset
+kappa 0.689, AC1 0.772, PABAK 0.736.
