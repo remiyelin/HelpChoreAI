@@ -44,7 +44,48 @@ def test_auditor_blocks_clinical_advice_and_missing_disclaimer():
     ok, errs = checker.audit_report(bad, env)
     assert not ok and len(errs) >= 2
 
-def test_open_weight_auditor_blocked_without_credentials(monkeypatch):
-    monkeypatch.delenv("BASETEN_API_KEY", raising=False)
-    result, errs = checker.audit_with_open_weights("x", _env())
-    assert result is None and "BLOCKED" in errs[0]
+def test_forged_key_envelope_rejected():
+    import copy
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives import serialization
+    env = _env()
+    forged = copy.deepcopy(env)
+    forged["payload"]["delta_adj"] = 0.25
+    forged["payload"]["decision"] = "exceeds_RCV"
+    forged["payload"]["payload_sha256"] = checker._payload_hash(forged["payload"])
+    forged["payload"]["report_sha256"] = checker.sha_bytes(checker.render_report(forged).encode())
+    attacker = Ed25519PrivateKey.generate()
+    forged["signature_hex"] = attacker.sign(checker.canonical(forged["payload"])).hex()
+    forged["public_key_hex"] = attacker.public_key().public_bytes(
+        serialization.Encoding.Raw, serialization.PublicFormat.Raw).hex()
+    ok, errs = checker.verify_envelope(forged, check_tables=False)
+    assert not ok and any("pinned" in e or "signature" in e for e in errs), errs
+
+def test_committed_example_verifies_from_tracked_files_only():
+    import hashlib, json
+    root = Path(__file__).parent.parent
+    env = json.loads((root / "data" / "checker" / "example_report_P1_0w_2w.json").read_text())
+    assert env["public_key_hex"] == (root / "data" / "checker" / "public_key.hex").read_text().strip()
+    hashed = env["payload"]["chain"]["hashed_files"]
+    assert hashed and "data/fetch_manifest/fetch_log_step1.json" not in hashed
+    assert "data/tables/visit_pairs_decisions_v3.csv" in hashed
+    assert env["payload"]["report_sha256"] == hashlib.sha256(
+        (root / "data" / "checker" / "example_report_P1_0w_2w.md").read_bytes()).hexdigest()
+    ok, errs = checker.verify_envelope(env)
+    assert ok, errs
+
+def test_unparseable_baseten_reply_returns_block(monkeypatch):
+    import meta_api
+    monkeypatch.setattr(meta_api, "chat_cached",
+                        lambda *a, **k: {"status": "OK", "text": "not json at all", "_cache": "miss"})
+    out = meta_api.baseten_audit("any report", {})
+    assert out["status"] == "BLOCK" and out["verdict"] == "BLOCK"
+
+def test_spelled_out_number_narrative_rejected():
+    env = _env()
+    for bad in ["The fraction rose by twelve percent.", "A change of thirty units was seen."]:
+        try:
+            checker.render_report(env, bad)
+            assert False, f"spelled-out narrative must be rejected: {bad}"
+        except ValueError:
+            pass

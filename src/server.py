@@ -108,24 +108,6 @@ def live_status():
             "open_weight_auditor": "LIVE" if os.environ.get("BASETEN_API_KEY") else "OFFLINE (set BASETEN_API_KEY)",
             "open_weight_model": "meta-models/muse-spark-open-1026 via Baseten"}
 
-def baseten_audit(report, payload):
-    """Guarded live auditor: attempts Baseten chat-completions; any failure = BLOCKED, never approved."""
-    key = os.environ.get("BASETEN_API_KEY")
-    if not key: return {"status": "BLOCKED", "detail": "BASETEN_API_KEY not set"}
-    body = json.dumps({"model": "meta-models/muse-spark-open-1026",
-                       "messages": [{"role": "user", "content":
-                                     "Audit this research report for clinical-advice language, patient identifiers, "
-                                     "or numbers not in the payload. Reply BLOCK or PASS with one reason.\nPAYLOAD:"
-                                     + json.dumps(payload) + "\nREPORT:\n" + report}]}).encode()
-    req = urllib.request.Request(os.environ.get("BASETEN_API_URL", "https://inference.baseten.co/v1/chat/completions"),
-                                 data=body, headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            txt = r.read().decode()[:2000]
-        return {"status": "BLOCK" if "BLOCK" in txt.upper()[:200] else "PASS", "detail": txt[:300]}
-    except Exception as e:
-        return {"status": "BLOCKED", "detail": f"{type(e).__name__}: {e}"}
-
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a): pass
     def send_json(self, obj, code=200):

@@ -27,3 +27,34 @@ clinical-advice+missing-disclaimer blocked; open-weight blocked without credenti
 Step 4b table invariants).
 Private key lives in data/checker/private_key.pem (local demo key; do not commit to public repo —
 rotate/provision per deployment).
+
+## Checker hardening + tamper benchmark (2026-10-31)
+
+Pinned key: the public key is committed at `data/checker/public_key.hex`; the private key stays
+git-ignored. `verify_envelope()` verifies only against the pinned key and refuses any envelope
+whose `public_key_hex` differs — a forged envelope re-signed with an attacker key (fake delta
++0.25, `exceeds_RCV`) is rejected. Tracked-file chain: `chain_hashes()` hashes only files from
+`git ls-files` (the git-ignored `fetch_log_step1.json` is excluded), lists the hashed paths in
+`chain.hashed_files` inside the signed payload, points at the v3 decision table
+(`visit_pairs_decisions_v3.csv` / `per_visit_adjusted_v3.csv`), and the payload carries
+`report_sha256` (SHA-256 of the rendered report text). The committed example
+`data/checker/example_report_P1_0w_2w.*` verifies on a fresh clone. `meta_api.baseten_audit`
+asks the Baseten open-weight model (`meta-models/muse-spark-open-1026`, falling back to the
+served `meta-models/muse-spark-open`) for strict JSON
+`{"verdict": "PASS"|"BLOCK", "reasons": [...]}` and fails closed: anything unparseable or not
+explicitly `PASS` is `BLOCK`. The local narrative rule also rejects spelled-out numbers
+(one–twenty, thirty, etc.) and percent words (`percent`, `percentage`).
+
+12-report tamper benchmark (3 clean, 3 altered numbers, 3 paraphrased clinical advice,
+3 patient-identifier or spelled-out number; P1 example payload; 12 new billed Baseten calls,
+served model `meta-models/muse-spark-open`; the `-1026` attempts 404'd and were not billed):
+
+| Auditor | Sensitivity (tampered blocked, n=9) | Specificity (clean passed, n=3) |
+|---|---|---|
+| Local rule auditor | 0.667 (6/9) | 1.000 (3/3) |
+| Baseten open-weight auditor | 0.889 (8/9) | 1.000 (3/3) |
+
+Per category: local blocked 3/3 altered numbers, 0/3 paraphrased advice, 3/3 identifier/spelled-out;
+Baseten blocked 3/3 altered numbers, 3/3 paraphrased advice, 2/3 identifier/spelled-out
+(it passed the synthetic `XX (0w)` identifier case). Local misses are paraphrases that avoid
+the banned phrases; Baseten catches those but missed the synthetic identifier.

@@ -486,20 +486,36 @@ def spark_narrative(payload):
     return chat_cached(META_BASE, key, "muse-spark-1.3", [{"role": "user", "content": prompt}],
                        extra=json.dumps(payload, sort_keys=True))
 
+def _parse_baseten_verdict(text):
+    """Strict JSON verdict parse. Fail-closed: only an explicit PASS verdict passes."""
+    try:
+        obj = json.loads(str(text).strip())
+    except Exception:
+        return "BLOCK", ["unparseable auditor reply"]
+    if not isinstance(obj, dict) or obj.get("verdict") not in ("PASS", "BLOCK"):
+        return "BLOCK", ["auditor reply is not a strict PASS/BLOCK verdict"]
+    reasons = obj.get("reasons")
+    if not isinstance(reasons, list):
+        return "BLOCK", ["auditor reasons missing or not a list"]
+    return obj["verdict"], [str(r) for r in reasons]
+
 def baseten_audit(report, payload):
     key = os.environ.get("BASETEN_API_KEY")
     prompt = ("You are a compliance auditor. Check this research report against its payload. "
               "Flag clinical-advice language, disease-progression claims, patient identifiers, or any number "
-              "not present in the payload. Reply starting with BLOCK or PASS, then one short reason.\nPAYLOAD: "
+              "not present in the payload (including spelled-out numbers). "
+              'Reply with strict JSON only: {"verdict": "PASS"|"BLOCK", "reasons": [...]}. '
+              'Use "PASS" only if there are no flags; otherwise use "BLOCK".\nPAYLOAD: '
               + json.dumps(payload) + "\nREPORT:\n" + report)
-    # Hackathon ID per guide; Baseten public changelog lists meta-models/muse-spark-open. Try in order, report served model.
+    # Baseten serves meta-models/muse-spark-open; the -1026 ID 404s (not billed). Try in order.
+    r = {"status": "BLOCKED", "detail": "API key not set", "_cache": "miss"}
     for model in ["meta-models/muse-spark-open-1026", "meta-models/muse-spark-open"]:
         r = chat_cached(BASETEN_URL.rsplit("/chat/completions", 1)[0], key, model,
                         [{"role": "user", "content": prompt}])
         if r.get("status") == "OK":
-            txt = r.get("text", "")
-            return {"status": "BLOCK" if txt.strip().upper().startswith("BLOCK") else "PASS",
-                    "model": model, "detail": txt[:300], "_cache": r["_cache"]}
+            verdict, reasons = _parse_baseten_verdict(r.get("text", ""))
+            return {"status": verdict, "verdict": verdict, "reasons": reasons,
+                    "model": model, "detail": (r.get("text", "") or "")[:300], "_cache": r.get("_cache")}
     return r
 
 VOICE_MODEL = os.environ.get("META_VOICE_MODEL", "muse-voice-transcribe-1.0")  # alias: muse-voice-transcribe
