@@ -63,6 +63,13 @@ stronger evidence. The classifier remains a triage device, never ground truth.
 One SAM feature is `sam_iou_author` (mask-vs-hull disagreement), which is itself
 part of the shape signal and uses no label information.
 
+**Population update (P-23, docs/POPULATION.md):** that gain is a
+queue-selected result. On the 983 kept cells off the queue, BASE is
+already 0.892 and BASE+SAM is 0.888 — the gain disappears; on all
+1,943 SAM-OK cells it shrinks to +0.043 (0.280 vs 0.237). Read the
+0.279 → 0.374 figure only as a statement about disagreement-selected
+cells, not about the cell population.
+
 ## Ledger
 
 Pilot: 72 new SAM calls (cap 75). Full batch: **939 new calls** (cap 941; the 20

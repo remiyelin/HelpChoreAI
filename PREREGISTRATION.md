@@ -162,3 +162,21 @@ unchanged. It recreates `data/tables/sealed_results.csv` from
 `per_run_holdout.csv` in memory to 6 decimals (test:
 `tests/test_holdout_eval.py`, skipped when the holdout data is absent);
 the committed file itself is not regenerated.
+
+## Scorecard update — predictions (d) and (e) measured (2026-11-01, P-23)
+
+Measured under the frozen §6 ranges and the same code
+(`src/population_eval.py` Part C; detail in `docs/POPULATION.md`).
+
+- **(d) Second-rater agreement — NOT MET as a joint prediction.**
+  Cloud `muse-spark-1.3` (80 cells, 40/40 by author label): AC1 0.518
+  (frozen 0.10–0.65 — in range), PABAK 0.454 (0.05–0.60 — in range),
+  cannot_tell 0.175 (0.30–0.55 — **below range**). Open-weight
+  `muse-spark-open`: all 80 calls BLOCKED (Baseten HTTP 402), so the
+  open-weight and head-to-head predictions are UNMEASURED, not met.
+- **(e) SAM 3.1 spicule concavity — NOT MET.** On 180 holdout cells:
+  mean solidity health=1 0.9429 vs health=0 0.9454 (difference −0.0025;
+  frozen −0.005…−0.025 — direction right, magnitude below range);
+  convexity defects >1px 1.982 vs 1.464 (+0.518; frozen 0.3–0.9 — in
+  range); BASE+SAM LOPO kappa −0.052 vs BASE 0.033 — BASE+SAM is
+  worse, so “not worse than BASE” fails.

@@ -189,5 +189,318 @@
    "rcv95_median": false,
    "author_solidity_sample": false
   }
+ },
+ "population_sam_lopo": {
+  "queue": {
+   "BASE": {
+    "n": 960,
+    "mean_kappa": 0.279,
+    "kappa_ci95": [
+     0.164,
+     0.379
+    ],
+    "per_patient": {
+     "P1": {
+      "kappa": 0.318,
+      "ac1": 0.343,
+      "pabak": 0.328,
+      "bal_acc": 0.657,
+      "n": 467
+     },
+     "P2": {
+      "kappa": 0.108,
+      "ac1": 0.213,
+      "pabak": 0.164,
+      "bal_acc": 0.555,
+      "n": 459
+     },
+     "P4": {
+      "kappa": 0.412,
+      "ac1": 0.42,
+      "pabak": 0.412,
+      "bal_acc": 0.718,
+      "n": 34
+     }
+    }
+   },
+   "BASE+SAM": {
+    "n": 960,
+    "mean_kappa": 0.374,
+    "kappa_ci95": [
+     0.272,
+     0.469
+    ],
+    "per_patient": {
+     "P1": {
+      "kappa": 0.338,
+      "ac1": 0.353,
+      "pabak": 0.344,
+      "bal_acc": 0.668,
+      "n": 467
+     },
+     "P2": {
+      "kappa": 0.214,
+      "ac1": 0.293,
+      "pabak": 0.254,
+      "bal_acc": 0.61,
+      "n": 459
+     },
+     "P4": {
+      "kappa": 0.57,
+      "ac1": 0.605,
+      "pabak": 0.588,
+      "bal_acc": 0.789,
+      "n": 34
+     }
+    }
+   },
+   "SAM_ONLY": {
+    "n": 960,
+    "mean_kappa": 0.161,
+    "kappa_ci95": [
+     0.042,
+     0.269
+    ],
+    "per_patient": {
+     "P1": {
+      "kappa": 0.166,
+      "ac1": 0.198,
+      "pabak": 0.178,
+      "bal_acc": 0.582,
+      "n": 467
+     },
+     "P2": {
+      "kappa": 0.163,
+      "ac1": 0.16,
+      "pabak": 0.15,
+      "bal_acc": 0.589,
+      "n": 459
+     },
+     "P4": {
+      "kappa": 0.153,
+      "ac1": 0.308,
+      "pabak": 0.236,
+      "bal_acc": 0.573,
+      "n": 34
+     }
+    }
+   }
+  },
+  "off_queue": {
+   "BASE": {
+    "n": 983,
+    "mean_kappa": 0.892,
+    "kappa_ci95": [
+     0.868,
+     0.916
+    ],
+    "per_patient": {
+     "P1": {
+      "kappa": 0.838,
+      "ac1": 0.868,
+      "pabak": 0.854,
+      "bal_acc": 0.94,
+      "n": 507
+     },
+     "P2": {
+      "kappa": 0.838,
+      "ac1": 0.858,
+      "pabak": 0.848,
+      "bal_acc": 0.928,
+      "n": 423
+     },
+     "P4": {
+      "kappa": 1.0,
+      "ac1": 1.0,
+      "pabak": 1.0,
+      "bal_acc": 1.0,
+      "n": 53
+     }
+    }
+   },
+   "BASE+SAM": {
+    "n": 983,
+    "mean_kappa": 0.888,
+    "kappa_ci95": [
+     0.864,
+     0.91
+    ],
+    "per_patient": {
+     "P1": {
+      "kappa": 0.821,
+      "ac1": 0.853,
+      "pabak": 0.838,
+      "bal_acc": 0.934,
+      "n": 507
+     },
+     "P2": {
+      "kappa": 0.842,
+      "ac1": 0.864,
+      "pabak": 0.854,
+      "bal_acc": 0.925,
+      "n": 423
+     },
+     "P4": {
+      "kappa": 1.0,
+      "ac1": 1.0,
+      "pabak": 1.0,
+      "bal_acc": 1.0,
+      "n": 53
+     }
+    }
+   },
+   "SAM_ONLY": {
+    "n": 983,
+    "mean_kappa": 0.395,
+    "kappa_ci95": [
+     0.319,
+     0.472
+    ],
+    "per_patient": {
+     "P1": {
+      "kappa": 0.333,
+      "ac1": 0.329,
+      "pabak": 0.314,
+      "bal_acc": 0.701,
+      "n": 507
+     },
+     "P2": {
+      "kappa": 0.476,
+      "ac1": 0.561,
+      "pabak": 0.522,
+      "bal_acc": 0.737,
+      "n": 423
+     },
+     "P4": {
+      "kappa": 0.376,
+      "ac1": 0.453,
+      "pabak": 0.396,
+      "bal_acc": 0.776,
+      "n": 53
+     }
+    }
+   }
+  },
+  "all": {
+   "BASE": {
+    "n": 1943,
+    "mean_kappa": 0.237,
+    "kappa_ci95": [
+     0.159,
+     0.314
+    ],
+    "per_patient": {
+     "P1": {
+      "kappa": 0.184,
+      "ac1": 0.26,
+      "pabak": 0.224,
+      "bal_acc": 0.592,
+      "n": 974
+     },
+     "P2": {
+      "kappa": 0.169,
+      "ac1": 0.236,
+      "pabak": 0.202,
+      "bal_acc": 0.588,
+      "n": 882
+     },
+     "P4": {
+      "kappa": 0.359,
+      "ac1": 0.518,
+      "pabak": 0.448,
+      "bal_acc": 0.693,
+      "n": 87
+     }
+    }
+   },
+   "BASE+SAM": {
+    "n": 1943,
+    "mean_kappa": 0.28,
+    "kappa_ci95": [
+     0.204,
+     0.354
+    ],
+    "per_patient": {
+     "P1": {
+      "kappa": 0.239,
+      "ac1": 0.297,
+      "pabak": 0.268,
+      "bal_acc": 0.621,
+      "n": 974
+     },
+     "P2": {
+      "kappa": 0.194,
+      "ac1": 0.257,
+      "pabak": 0.224,
+      "bal_acc": 0.601,
+      "n": 882
+     },
+     "P4": {
+      "kappa": 0.407,
+      "ac1": 0.527,
+      "pabak": 0.472,
+      "bal_acc": 0.727,
+      "n": 87
+     }
+    }
+   },
+   "SAM_ONLY": {
+    "n": 1943,
+    "mean_kappa": 0.168,
+    "kappa_ci95": [
+     0.095,
+     0.239
+    ],
+    "per_patient": {
+     "P1": {
+      "kappa": 0.192,
+      "ac1": 0.198,
+      "pabak": 0.188,
+      "bal_acc": 0.601,
+      "n": 974
+     },
+     "P2": {
+      "kappa": 0.139,
+      "ac1": 0.196,
+      "pabak": 0.166,
+      "bal_acc": 0.573,
+      "n": 882
+     },
+     "P4": {
+      "kappa": 0.174,
+      "ac1": 0.244,
+      "pabak": 0.196,
+      "bal_acc": 0.606,
+      "n": 87
+     }
+    }
+   }
+  }
+ },
+ "population_tables": {
+  "rater_unselected_spark": {
+   "rows": 100,
+   "file": "data/tables/rater_unselected_spark.csv"
+  },
+  "rater_unselected_open": {
+   "rows": 100,
+   "file": "data/tables/rater_unselected_open.csv"
+  },
+  "rater_sealed_spark": {
+   "rows": 80,
+   "file": "data/tables/rater_sealed_spark.csv"
+  },
+  "rater_sealed_open": {
+   "rows": 80,
+   "file": "data/tables/rater_sealed_open.csv"
+  },
+  "sam_sealed_shape": {
+   "rows": 180,
+   "file": "data/tables/sam_shape_features_sealed.csv"
+  },
+  "sam_tracking_gate_oos": {
+   "rows": 12,
+   "file": "data/tables/sam_tracking_gate_oos.csv"
+  }
  }
 }

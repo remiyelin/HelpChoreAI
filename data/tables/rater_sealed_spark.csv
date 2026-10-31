@@ -1,0 +1,81 @@
+patient,date,visit,cell,author_health,repeat,n_frames_sent,track_frames,model,status,cache,spiculated,confidence,spicule_points,image_quality,reason
+P3,20170809,0w,0,0,0,3,145,muse-spark-1.3,OK,miss,no,0.75,[],ok,"Smooth deformed outline in all frames, no pointed protrusions visible"
+P3,20170809,0w,12,0,0,3,151,muse-spark-1.3,OK,miss,no,0.75,[],ok,Smooth rounded outline without distinct pointed protrusions.
+P3,20170809,0w,23,0,0,3,148,muse-spark-1.3,OK,miss,no,0.9,[],ok,"Smooth curved outline in all frames, no pointed protrusions visible."
+P3,20170809,0w,42,0,0,3,145,muse-spark-1.3,OK,miss,no,0.75,[],ok,"Smooth rounded outlines in all frames, no pointed protrusions."
+P3,20170809,0w,75,0,0,3,142,muse-spark-1.3,OK,miss,no,0.85,[],ok,"Smooth rounded outline with single tapered end, no distinct spicules."
+P3,20170809,0w,84,0,0,3,140,muse-spark-1.3,OK,miss,no,0.85,[],ok,Smooth rounded outline in all frames without pointed protrusions.
+P3,20170809,0w,89,0,0,3,139,muse-spark-1.3,OK,miss,no,0.9,[],ok,"Smooth rounded outline in all frames, no pointed protrusions."
+P3,20170809,0w,103,0,0,3,133,muse-spark-1.3,OK,miss,no,0.85,[],ok,Smooth oval outline in all frames without pointed protrusions.
+P3,20170809,0w,105,0,0,3,141,muse-spark-1.3,OK,miss,no,0.9,[],ok,"Smooth teardrop oval outlines in all frames, no pointed protrusions."
+P3,20170809,0w,118,0,0,3,146,muse-spark-1.3,OK,miss,no,0.9,[],ok,Smooth teardrop outline without multiple distinct spicules in all frames.
+P3,20170822,2w,15,0,0,3,131,muse-spark-1.3,OK,miss,no,0.92,[],ok,Smooth teardrop outline without pointed protrusions in all frames.
+P3,20170822,2w,32,0,0,3,125,muse-spark-1.3,OK,miss,yes,0.65,"[{""frame"": 3, ""x"": 435, ""y"": 560}]",ok,Cell shows single sharp pointed protrusion on left outline
+P3,20170822,2w,39,0,0,3,131,muse-spark-1.3,OK,miss,no,0.7,[],ok,Smooth curved outline without distinct pointed protrusions
+P3,20170822,2w,84,0,0,3,118,muse-spark-1.3,OK,miss,no,0.85,[],ok,Smooth oval to round outline in all frames without pointed protrusions.
+P3,20170822,2w,125,0,0,3,122,muse-spark-1.3,OK,miss,no,0.9,[],ok,Smooth deformed outline without pointed protrusions in all frames
+P3,20170906,4w,27,0,0,3,196,muse-spark-1.3,OK,miss,no,0.75,[],ok,Smooth curved outline without distinct pointed protrusions in all frames.
+P3,20170906,4w,31,0,0,3,188,muse-spark-1.3,OK,miss,no,0.75,[],ok,"Triangular deformed cell with smooth outline, no distinct spicules visible"
+P3,20170919,6w,1,0,0,3,133,muse-spark-1.3,OK,miss,no,0.85,[],ok,Smooth triangular outline without distinct pointed spicules.
+P3,20170919,6w,47,0,0,3,130,muse-spark-1.3,OK,miss,no,0.78,[],ok,Round smooth outlines in frames 2-3; no pointed protrusions visible.
+P3,20170919,6w,65,0,0,3,134,muse-spark-1.3,OK,miss,no,0.9,[],ok,Smooth ovoid teardrop outline without pointed protrusions in all frames
+P3,20170919,6w,70,0,0,3,31,muse-spark-1.3,OK,miss,no,0.75,[],ok,"Cell outlines smooth, deformed but no distinct pointed spicules visible"
+P3,20170919,6w,93,0,0,3,136,muse-spark-1.3,OK,miss,no,0.9,[],ok,Smooth curved outline without pointed protrusions in all frames
+P3,20170919,6w,98,0,0,3,133,muse-spark-1.3,OK,miss,no,0.85,[],ok,Smooth deformed outline without distinct pointed protrusions in all frames
+P3,20171018,10w,89,0,0,3,120,muse-spark-1.3,OK,miss,no,0.7,[],ok,"Smooth rounded outline, no distinct pointed protrusions visible."
+P3,20171018,10w,91,0,0,3,122,muse-spark-1.3,OK,miss,no,0.9,[],ok,"Smooth rounded triangular outline, no pointed protrusions in any frame."
+P3,20171018,10w,93,0,0,3,125,muse-spark-1.3,OK,miss,no,0.85,[],ok,Smooth oval outline in all frames without pointed protrusions.
+P3,20171018,10w,107,0,0,3,125,muse-spark-1.3,OK,miss,no,0.85,[],ok,"Smooth rounded outline in all frames, no pointed protrusions visible."
+P3,20180206,26w,5,0,0,3,157,muse-spark-1.3,OK,miss,no,0.75,[],ok,Smooth curved outline with no distinct pointed protrusions visible.
+P3,20180206,26w,18,0,0,3,165,muse-spark-1.3,OK,miss,no,0.75,[],ok,Smooth teardrop outline without distinct pointed spicules in all frames.
+P3,20180313,31w,35,0,0,3,133,muse-spark-1.3,OK,miss,no,0.9,[],ok,Smooth curved outline without pointed protrusions in all frames.
+P3,20180313,31w,57,0,0,3,142,muse-spark-1.3,OK,miss,no,0.85,[],ok,Smooth teardrop outline without distinct pointed spicules.
+P3,20180313,31w,71,0,0,3,141,muse-spark-1.3,OK,miss,no,0.9,[],ok,"Smooth rounded outlines in all frames, no pointed protrusions."
+P3,20180313,31w,74,0,0,3,142,muse-spark-1.3,OK,miss,yes,0.75,"[{""frame"": 2, ""x"": 600, ""y"": 350}]",ok,Teardrop cell with single sharp pointed tip dorsally
+P5,20170829,0w,26,0,0,3,141,muse-spark-1.3,OK,miss,no,0.65,[],ok,Smooth teardrop outline without distinct pointed spicules visible.
+P5,20170829,0w,30,0,0,3,141,muse-spark-1.3,OK,miss,no,0.85,[],ok,Smooth teardrop outline without distinct pointed spicules in all frames
+P5,20170829,0w,41,0,0,3,145,muse-spark-1.3,OK,miss,no,0.8,[],ok,Smooth crescent outline without pointed protrusions in all frames
+P5,20171116,11w,54,0,0,3,147,muse-spark-1.3,OK,miss,yes,0.62,"[{""frame"": 1, ""x"": 600, ""y"": 700}, {""frame"": 2, ""x"": 600, ""y"": 705}, {""frame"": 3, ""x"": 602, ""y"": 710}]",ok,Single sharp pointed tail at lower right of otherwise smooth body.
+P5,20190226,78w,7,0,0,3,137,muse-spark-1.3,OK,miss,no,0.85,[],ok,Smooth rounded outline without pointed protrusions in all frames.
+P5,20190226,78w,41,0,0,3,133,muse-spark-1.3,OK,miss,no,0.75,[],ok,Smooth deformed outline without pointed protrusions in all frames.
+P5,20190226,78w,58,0,0,3,125,muse-spark-1.3,OK,miss,yes,0.6,"[{""frame"": 1, ""x"": 530, ""y"": 300}]",ok,Cell shows single sharp pointed protrusion apically all frames
+P3,20170809,0w,25,1,0,3,144,muse-spark-1.3,OK,miss,no,0.85,[],ok,"Smooth oval outlines in all frames, no pointed protrusions."
+P3,20170809,0w,39,1,0,3,137,muse-spark-1.3,OK,miss,no,0.9,[],ok,"Smooth rounded outlines in all frames, no pointed protrusions"
+P3,20170809,0w,59,1,0,3,136,muse-spark-1.3,OK,miss,no,0.7,[],ok,Smooth outline without distinct pointed protrusions in all frames
+P3,20170809,0w,74,1,0,3,142,muse-spark-1.3,OK,miss,no,0.75,[],ok,Smooth triangular deformed outline without distinct pointed spicules.
+P3,20170809,0w,80,1,0,3,149,muse-spark-1.3,OK,miss,no,0.85,[],ok,"Smooth teardrop outline in all frames, no pointed protrusions"
+P3,20170822,2w,35,1,0,3,132,muse-spark-1.3,OK,miss,no,0.9,[],ok,Smooth curved outline without pointed protrusions in all frames.
+P3,20170822,2w,53,1,0,3,130,muse-spark-1.3,OK,miss,cannot_tell,0.5,[],poor,"Blurry angular outline, no clearly resolved pointed spicules visible."
+P3,20170822,2w,107,1,0,3,116,muse-spark-1.3,OK,miss,yes,0.65,"[{""frame"": 2, ""x"": 600, ""y"": 350}]",ok,Single pointed protrusion on upper right outline in all frames
+P3,20170822,2w,110,1,0,3,121,muse-spark-1.3,OK,miss,cannot_tell,0.45,[],poor,"Blurry low resolution obscures outline, no distinct points confirmed"
+P3,20170906,4w,9,1,0,3,185,muse-spark-1.3,OK,miss,no,0.9,[],ok,Smooth crescent outline in all frames without pointed protrusions.
+P3,20170906,4w,91,1,0,3,176,muse-spark-1.3,OK,miss,cannot_tell,0.5,[],poor,Right edge irregular but no distinct pointed protrusions resolved
+P3,20170919,6w,34,1,0,3,131,muse-spark-1.3,OK,miss,cannot_tell,0.65,[],poor,"Blurry dark cell, outline indistinct, spicules not clearly resolvable."
+P3,20170919,6w,107,1,0,3,133,muse-spark-1.3,OK,miss,no,0.75,[],ok,Smooth rounded outline without pointed protrusions in all frames
+P3,20171018,10w,2,1,0,3,123,muse-spark-1.3,OK,miss,yes,0.65,"[{""frame"": 2, ""x"": 635, ""y"": 435}, {""frame"": 2, ""x"": 550, ""y"": 375}, {""frame"": 2, ""x"": 555, ""y"": 650}]",ok,Triangular cell with sharp pointed corners on outline
+P3,20171018,10w,60,1,0,3,122,muse-spark-1.3,OK,miss,cannot_tell,0.5,[],poor,"Cell small dark blurry, outline irregular but no distinct pointed protrusions resolvable."
+P3,20171018,10w,79,1,0,3,121,muse-spark-1.3,OK,miss,yes,0.85,"[{""frame"": 1, ""x"": 480, ""y"": 540}, {""frame"": 1, ""x"": 590, ""y"": 350}, {""frame"": 1, ""x"": 610, ""y"": 700}]",ok,Triangular cell with three distinct pointed protrusions on outline.
+P3,20171018,10w,87,1,0,3,125,muse-spark-1.3,OK,miss,cannot_tell,0.4,[],poor,Dark blurry cell outline prevents definitive spicule assessment
+P3,20180206,26w,4,1,0,3,161,muse-spark-1.3,OK,miss,cannot_tell,0.6,[],poor,"Dark blurry angular cell, distinct spicules not clearly resolved."
+P3,20180206,26w,26,1,0,3,167,muse-spark-1.3,OK,miss,cannot_tell,0.65,[],poor,"Outline indistinct, no distinct pointed protrusions discernible."
+P3,20180206,26w,35,1,0,3,164,muse-spark-1.3,OK,miss,no,0.85,[],ok,Smooth curved outline without pointed protrusions in all frames.
+P3,20180206,26w,52,1,0,3,163,muse-spark-1.3,OK,miss,cannot_tell,0.5,[],poor,Irregular outline without distinct clear pointed protrusions visible
+P3,20180206,26w,66,1,0,3,165,muse-spark-1.3,OK,miss,yes,0.6,"[{""frame"": 2, ""x"": 595, ""y"": 380}, {""frame"": 2, ""x"": 615, ""y"": 500}, {""frame"": 2, ""x"": 605, ""y"": 600}]",poor,"Right outline shows pointed irregular protrusions, left smooth."
+P3,20180313,31w,62,1,0,3,130,muse-spark-1.3,OK,miss,no,0.75,[],ok,Rounded irregular outline without distinct pointed protrusions in all frames
+P5,20170829,0w,2,1,0,3,127,muse-spark-1.3,OK,miss,no,0.75,[],ok,"Elongated triangular flow shape with smooth outline, no distinct small spicules."
+P5,20170829,0w,17,1,0,3,144,muse-spark-1.3,OK,miss,yes,0.55,"[{""frame"": 1, ""x"": 540, ""y"": 300}, {""frame"": 1, ""x"": 610, ""y"": 630}]",poor,Top and right outline show distinct pointed protrusions despite blur.
+P5,20170829,0w,29,1,0,3,140,muse-spark-1.3,OK,miss,no,0.75,[],ok,Deformed rounded outline without distinct sharp pointed protrusions
+P5,20170829,0w,40,1,0,3,132,muse-spark-1.3,OK,miss,no,0.75,[],ok,"Outlines smooth and rounded in all frames, no pointed protrusions visible."
+P5,20170829,0w,46,1,0,3,140,muse-spark-1.3,OK,miss,yes,0.85,"[{""frame"": 1, ""x"": 425, ""y"": 520}, {""frame"": 1, ""x"": 545, ""y"": 690}, {""frame"": 2, ""x"": 430, ""y"": 510}]",ok,Irregular outline with multiple distinct pointed protrusions in all frames.
+P5,20170829,0w,53,1,0,3,135,muse-spark-1.3,OK,miss,yes,0.7,"[{""frame"": 1, ""x"": 738, ""y"": 560}, {""frame"": 3, ""x"": 697, ""y"": 600}]",ok,Irregular outline with distinct pointed protrusions on moving cell
+P5,20170829,0w,69,1,0,3,152,muse-spark-1.3,OK,miss,cannot_tell,0.5,[],poor,"Blurry irregular outline, no distinct pointed spicules resolvable."
+P5,20171116,11w,0,1,0,3,157,muse-spark-1.3,OK,miss,no,0.8,[],ok,"Smooth C-shaped outline in all frames, no pointed protrusions."
+P5,20171116,11w,20,1,0,3,142,muse-spark-1.3,OK,miss,yes,0.8,"[{""frame"": 3, ""x"": 395, ""y"": 535}, {""frame"": 3, ""x"": 605, ""y"": 545}]",ok,Frame three shows irregular outline with sharp pointed projections bilaterally.
+P5,20171116,11w,84,1,0,3,138,muse-spark-1.3,OK,miss,cannot_tell,0.5,[],poor,"outline indistinct, no clearly resolved pointed protrusions"
+P5,20171116,11w,88,1,0,3,142,muse-spark-1.3,OK,miss,yes,0.72,"[{""frame"": 1, ""x"": 595, ""y"": 360}, {""frame"": 2, ""x"": 484, ""y"": 630}, {""frame"": 2, ""x"": 555, ""y"": 735}]",ok,Angular outline with pointed protrusions visible in all frames.
+P5,20171116,11w,93,1,0,3,138,muse-spark-1.3,OK,miss,cannot_tell,0.4,[],poor,Blurry pixelated cell outline irregular but no clear pointed spicules resolvable.
+P5,20180123,21w,32,1,0,3,72,muse-spark-1.3,OK,miss,yes,0.7,"[{""frame"": 1, ""x"": 580, ""y"": 710}, {""frame"": 2, ""x"": 600, ""y"": 680}]",ok,Irregular right outline with distinct pointed protrusions visible
+P5,20180123,21w,36,1,0,3,72,muse-spark-1.3,OK,miss,yes,0.85,"[{""frame"": 1, ""x"": 550, ""y"": 380}, {""frame"": 1, ""x"": 610, ""y"": 715}, {""frame"": 2, ""x"": 615, ""y"": 705}]",ok,Irregular outline with multiple distinct pointed protrusions on edges.
+P5,20190226,78w,10,1,0,3,144,muse-spark-1.3,OK,miss,cannot_tell,0.45,[],poor,"Cell outlines irregular and blurred, no distinct pointed spicules resolvable"
+P5,20190226,78w,36,1,0,3,128,muse-spark-1.3,OK,miss,yes,0.68,"[{""frame"": 1, ""x"": 575, ""y"": 385}, {""frame"": 1, ""x"": 590, ""y"": 510}, {""frame"": 2, ""x"": 588, ""y"": 500}]",ok,"Right pole shows multiple small pointed projections, left outline smooth."
+P5,20190226,78w,68,1,0,3,124,muse-spark-1.3,OK,miss,cannot_tell,0.5,[],poor,Blurry frames; frame 2 irregular but no clear pointed spicules.

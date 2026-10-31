@@ -56,8 +56,11 @@ slope −0.322, prediction MET), flow adjustment reduced overdispersion in
 100% of visits (predicted 60–90%, NOT MET — reported as missed), and the
 QC gate blocked all three dramatic late swings (+17.4%, −15.4%, −14.4%)
 from being called treatment effects, returning 8 within_RCV / 0 exceeds /
-3 indeterminate_QC. Rater and SAM holdout endpoints were deliberately held
-uncalled to preserve budget. Nothing was re-fitted to force a match.
+3 indeterminate_QC. Nothing was re-fitted to force a match. The rater
+and SAM holdout predictions (d)/(e) were measured later in P-23 and
+scored NOT MET as joint predictions (docs/POPULATION.md); off the
+adjudication queue, the SAM shape gain over the hull baseline
+disappears (BASE+SAM 0.888 vs BASE 0.892 LOPO kappa).
 
 ## Meta AI tooling
 
@@ -88,8 +91,10 @@ a key or model is unavailable.
 Research prototype on one dataset (five patients; three dev, two holdout).
 The classifier and both raters are triage devices, never ground truth;
 statistical power for a +0.05 fraction change is only ~0.31 at current run
-counts, and 3 of 11 holdout pairs were QC-indeterminate. SAM/rater holdout
-endpoints are unmeasured. Model-cost figures in run ledgers are stated
+counts, and 3 of 11 holdout pairs were QC-indeterminate. On an
+unselected dev sample both raters agree with the author less than on
+the queue sample, and the open-weight holdout rating is unmeasured
+(Baseten refused the calls with HTTP 402 in P-23). Model-cost figures in run ledgers are stated
 estimates where the API does not expose billing.
 
 ## Research use only

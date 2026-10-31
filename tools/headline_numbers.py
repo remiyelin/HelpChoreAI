@@ -155,6 +155,20 @@ def main():
                                            if out["author_contour_solidity"].get("status") == "ok" else "data absent")}
     out["audit_expectations"] = {"expected": AUDIT, "observed": observed,
                                  "match": {k: AUDIT[k] == observed[k] for k in AUDIT}}
+    # P-23 population sections, when their tables have been generated.
+    pop_lopo = TABLES / "population_lopo.json"
+    if pop_lopo.exists():
+        out["population_sam_lopo"] = json.loads(pop_lopo.read_text(encoding="utf-8"))
+    for key, fname in (("rater_unselected_spark", "rater_unselected_spark.csv"),
+                       ("rater_unselected_open", "rater_unselected_open.csv"),
+                       ("rater_sealed_spark", "rater_sealed_spark.csv"),
+                       ("rater_sealed_open", "rater_sealed_open.csv"),
+                       ("sam_sealed_shape", "sam_shape_features_sealed.csv"),
+                       ("sam_tracking_gate_oos", "sam_tracking_gate_oos.csv")):
+        f = TABLES / fname
+        if f.exists():
+            d = pd.read_csv(f)
+            out.setdefault("population_tables", {})[key] = {"rows": int(len(d)), "file": f"data/tables/{fname}"}
     dest = TABLES / "headline_numbers.json"
     dest.write_text(json.dumps(out, indent=1) + "\n", encoding="utf-8")
     print(json.dumps(out, indent=1))
