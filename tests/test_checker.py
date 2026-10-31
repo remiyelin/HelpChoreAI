@@ -70,7 +70,7 @@ def test_forged_key_envelope_rejected():
     forged["payload"]["delta_adj"] = 0.25
     forged["payload"]["decision"] = "exceeds_RCV"
     forged["payload"]["payload_sha256"] = checker._payload_hash(forged["payload"])
-    forged["payload"]["report_sha256"] = checker.sha_bytes(checker.render_report(forged).encode())
+    forged["payload"]["report_sha256"] = checker.sha_report(checker.render_report(forged))
     attacker = Ed25519PrivateKey.generate()
     forged["signature_hex"] = attacker.sign(checker.canonical(forged["payload"])).hex()
     forged["public_key_hex"] = attacker.public_key().public_bytes(
@@ -87,8 +87,9 @@ def test_committed_example_verifies_from_tracked_files_only():
     assert hashed and "data/fetch_manifest/fetch_log_step1.json" not in hashed
     assert "data/tables/visit_pairs_decisions_v3.csv" in hashed
     assert env["payload"]["report_sha256"] == hashlib.sha256(
-        (root / "data" / "checker" / "example_report_P1_0w_2w.md").read_bytes()).hexdigest()
-    ok, errs = checker.verify_envelope(env)
+        (root / "data" / "checker" / "example_report_P1_0w_2w.md").read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+    report_text = (root / "data" / "checker" / "example_report_P1_0w_2w.md").read_text(encoding="utf-8")
+    ok, errs = checker.verify_envelope(env, report_text=report_text)
     assert ok, errs
 
 def test_unparseable_baseten_reply_returns_block(monkeypatch):
@@ -127,7 +128,10 @@ def test_every_committed_envelope_verifies_with_no_private_key(tmp_path, monkeyp
         sorted((ROOT / "data" / "checker").glob("*.json"))
     assert files
     for f in files:
-        ok, errs = checker.verify_envelope(json.loads(f.read_text()))
+        report = f.parent / "report.md"
+        if not report.exists(): report = f.with_suffix(".md")
+        report_text = report.read_text(encoding="utf-8") if report.exists() else None
+        ok, errs = checker.verify_envelope(json.loads(f.read_text()), report_text=report_text)
         assert ok, (f.name, errs)
     assert pin.read_bytes() == before
     assert not (tmp_path / "keys" / "private_key.pem").exists()
@@ -157,6 +161,25 @@ def test_rotate_cli_only_writes_with_confirm(tmp_path, monkeypatch):
     assert mod.main(["--confirm-rotate"]) == 0
     key = checker.load_signing_key()  # new private key matches the rewritten pin
     assert key is not None and pin.read_text().strip() != "00" * 32
+
+def test_injected_narrative_fails_verification():
+    env = _env()
+    report = (ROOT / "data" / "checker" / "example_report_P1_0w_2w.md").read_text(encoding="utf-8")
+    ok, errs = checker.verify_envelope(env, report_text=report)
+    assert ok, errs
+    injected = report.rstrip() + "\nNarrative: Patient improved on dasatinib; continue the dose."
+    ok, errs = checker.verify_envelope(env, report_text=injected)
+    assert not ok and any("report hash" in e for e in errs), errs
+
+def test_banned_phrases_refused():
+    env = _env()
+    for phrase in ["treatment response", "response to treatment", "responded to",
+                   "improved on", "worsened on", "drug effect", "continue the dose"]:
+        text = checker.render_report(env) + f"\nNarrative: The {phrase} was noted."
+        ok, errs = checker.audit_report(text, env)
+        assert not ok and any(phrase in e for e in errs), (phrase, errs)
+        with pytest.raises(ValueError):
+            checker.render_report(env, f"The {phrase} was noted.")
 
 def test_spelled_out_number_narrative_rejected():
     env = _env()

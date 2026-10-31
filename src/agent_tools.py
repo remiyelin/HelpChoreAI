@@ -145,11 +145,14 @@ def render_and_sign(patient: str, from_visit: str, to_visit: str, narrative: str
                       "feedback": "numbers belong in the templated payload fields, not in the "
                                   "narrative; remove all numbers from the narrative"})
     try:
-        env = checker.sign_payload(checker.build_payload(patient, from_visit, to_visit))
+        env = checker.sign_payload(checker.build_payload(patient, from_visit, to_visit),
+                                   narrative or "")
         report = checker.render_report(env, narrative or "")
     except ValueError as e:
         return _seal({"status": "REJECTED_UNVERIFIED_NUMBER", "feedback": str(e)})
-    ok, errs = checker.verify_envelope(env)
+    except (checker.NoSigningKey, checker.KeyMismatch) as e:
+        return _seal({"status": "SIGNING_DISABLED", "feedback": str(e)})
+    ok, errs = checker.verify_envelope(env, report_text=report)
     aok, aerrs = checker.audit_report(report, env)
     if not ok or not aok:
         return _seal({"status": "REJECTED_UNVERIFIED_NUMBER",

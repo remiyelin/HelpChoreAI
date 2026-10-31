@@ -24,7 +24,8 @@ DISCLAIMER = ("Research use only. RBC morphology is a peripheral target-engageme
               "by a qualified researcher using the per-cell visual overlay.")
 BANNED = ["diagnos", "progression of disease", "disease progression", "recommend treatment",
           "start dasatinib", "stop dasatinib", "start lithium", "stop lithium", "patient should",
-          "clinical advice", "prognos"]
+          "clinical advice", "prognos", "treatment response", "response to treatment",
+          "responded to", "improved on", "worsened on", "drug effect", "continue the dose"]
 PINNED_PUBLIC_KEY = KEYS / "public_key.hex"
 NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
                 "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
@@ -35,6 +36,10 @@ NUMBER_WORD_RE = re.compile(r"\b(" + "|".join(NUMBER_WORDS + ["percent", "percen
 
 def sha_bytes(b: bytes) -> str: return hashlib.sha256(b).hexdigest()
 def sha_file(p: Path) -> str: return sha_bytes(p.read_bytes())
+
+def sha_report(text: str) -> str:
+    """Hash of report text over CRLF-normalised (LF) bytes."""
+    return sha_bytes(text.replace("\r\n", "\n").replace("\r", "\n").encode())
 
 def canonical(obj) -> bytes:
     return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
@@ -77,7 +82,7 @@ def build_payload(patient: str, from_visit: str, to_visit: str) -> dict:
                "measurand": "health==1 fraction among shape!=0, flow-standardized",
                "disclaimer": DISCLAIMER, "chain": chain_hashes()}
     payload["payload_sha256"] = _payload_hash(payload)
-    payload["report_sha256"] = sha_bytes(render_report({"payload": payload}).encode())
+    payload["report_sha256"] = sha_report(render_report({"payload": payload}))
     return payload
 
 class NoSigningKey(Exception):
@@ -108,27 +113,26 @@ def load_signing_key() -> Ed25519PrivateKey:
         raise KeyMismatch("private key does not match pinned public key")
     return key
 
-def sign_payload(payload: dict) -> dict:
+def sign_payload(payload: dict, narrative: str = "") -> dict:
+    """Render the final report (with narrative) first, hash that exact text
+    into report_sha256, then sign. Signing never writes any file."""
     payload = dict(payload)
-    if payload.get("payload_sha256") != _payload_hash(payload):
-        payload["payload_sha256"] = _payload_hash(payload)
-    if not payload.get("report_sha256"):
-        payload["report_sha256"] = sha_bytes(render_report({"payload": payload}).encode())
+    payload["payload_sha256"] = _payload_hash(payload)
+    report = render_report({"payload": payload}, narrative or "")
+    payload["report_sha256"] = sha_report(report)
+    payload["payload_sha256"] = _payload_hash(payload)
     key = load_signing_key()
     sig = key.sign(canonical(payload))
     pub = key.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw).hex()
     return {"payload": payload, "signature_hex": sig.hex(), "public_key_hex": pub}
 
-def verify_envelope(env: dict, check_tables: bool = True) -> tuple[bool, list[str]]:
+def verify_envelope(env: dict, report_text: str = None, check_tables: bool = True) -> tuple[bool, list[str]]:
     errs = []
     payload = env.get("payload", {})
     if payload.get("payload_sha256") != _payload_hash(payload): errs.append("payload hash mismatch")
-    if payload.get("report_sha256"):
-        try:
-            if payload["report_sha256"] != sha_bytes(render_report(env).encode()):
-                errs.append("report hash mismatch (rendered report changed since signing)")
-        except Exception as e:
-            errs.append(f"report hash mismatch: {type(e).__name__}")
+    if report_text is not None:
+        if payload.get("report_sha256") != sha_report(report_text):
+            errs.append("report hash mismatch (report text differs from signed final report)")
     if check_tables:
         now = chain_hashes()
         if payload.get("chain", {}).get("raw_manifest_sha256") != now["raw_manifest_sha256"]:
@@ -164,6 +168,10 @@ def render_report(env: dict, narrative: str = "") -> str:
     m = NUMBER_WORD_RE.search(narrative or "")
     if m:
         raise ValueError(f"narrative slots may not contain spelled-out numbers or percent words: {m.group(0)!r}")
+    low_n = (narrative or "").lower()
+    for phrase in BANNED:
+        if phrase in low_n:
+            raise ValueError(f"narrative contains banned clinical-advice phrase: {phrase!r}")
     lines = ["# HelpChoreAI Audit Report (research use)",
              f"Dataset: Figshare Collection doi:{p['dataset_doi']} (CC BY 4.0, Reichel et al. 2022)",
              f"Patient code: {p['patient']} | Visits: {p['from_visit']} -> {p['to_visit']} | Treatment context: {p['treatment']}",

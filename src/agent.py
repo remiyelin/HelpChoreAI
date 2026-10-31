@@ -52,12 +52,30 @@ def trail_path() -> Path:
     return Path(os.environ.get("HELPCHORE_AGENT_TRAIL", str(LOGS / "audit_trail.jsonl")))
 
 
+GENESIS_SHA256 = "0" * 64
+
+
+def _entry_sha256(entry: dict) -> str:
+    body = {k: v for k, v in entry.items() if k != "entry_sha256"}
+    return checker.sha_bytes(checker.canonical(body))
+
+
+def _last_entry_sha256(p: Path) -> str:
+    if not p.exists(): return GENESIS_SHA256
+    lines = [l for l in p.read_text(encoding="utf-8").splitlines() if l.strip()]
+    if not lines: return GENESIS_SHA256
+    try: return json.loads(lines[-1]).get("entry_sha256") or GENESIS_SHA256
+    except Exception: return GENESIS_SHA256
+
+
 def _log(run_id, kind, payload):
     p = trail_path(); p.parent.mkdir(parents=True, exist_ok=True)
     entry = {"ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "run_id": run_id, "kind": kind}
     entry.update(payload)
     entry["input_sha256"] = checker.sha_bytes(checker.canonical(payload.get("input", {})))
     entry["output_sha256"] = checker.sha_bytes(checker.canonical(payload.get("output", {})))
+    entry["prev_sha256"] = _last_entry_sha256(p)
+    entry["entry_sha256"] = _entry_sha256(entry)
     with p.open("a", encoding="utf-8") as f: f.write(json.dumps(entry) + "\n")
     return entry
 
@@ -154,17 +172,24 @@ def verify_run(run_id, path=None):
     mine = [e for e in entries if e.get("run_id") == run_id]
     if not mine: print(f"FAILED: run {run_id} not in audit trail"); return False
     ok = True
-    for e in mine:
-        if checker.sha_bytes(checker.canonical(e.get("input", {}))) != e["input_sha256"]: ok = False; print(f"hash mismatch input at {e['kind']}")
-        # tool outputs are re-derived only for render steps; hash check covers the rest
+    # Recompute the whole chain and every entry's input/output hashes.
+    prev = GENESIS_SHA256
+    for e in entries:
+        if e.get("prev_sha256") != prev: ok = False; print(f"chain prev mismatch at {e.get('run_id')} {e.get('kind')}")
+        if e.get("entry_sha256") != _entry_sha256(e): ok = False; print(f"chain entry hash mismatch at {e.get('run_id')} {e.get('kind')}")
+        if checker.sha_bytes(checker.canonical(e.get("input", {}))) != e.get("input_sha256"): ok = False; print(f"hash mismatch input at {e['kind']}")
+        if checker.sha_bytes(checker.canonical(e.get("output", {}))) != e.get("output_sha256"): ok = False; print(f"hash mismatch output at {e['kind']}")
+        prev = e.get("entry_sha256") or prev
     renders = [e for e in mine if e.get("kind") == "tool" and e.get("tool") == "render_and_sign" and e["output"].get("status") == "PASS"]
     for e in renders:
         # Verification needs no private key and writes no file: check the stored
-        # envelope against the pinned public key instead of re-signing.
+        # envelope and the stored final report text against the pinned key.
         env = e["output"]["envelope"]
         if env.get("payload", {}).get("report_sha256") != e["output"].get("report_sha256"):
             ok = False; print("render re-run hash mismatch")
-        vok, verrs = checker.verify_envelope(env)
+        report_path = LOGS / "agent_runs" / run_id / "report.md"
+        report_text = report_path.read_text(encoding="utf-8") if report_path.exists() else None
+        vok, verrs = checker.verify_envelope(env, report_text=report_text)
         if not vok: ok = False; print(f"envelope re-verify failed: {verrs}")
     final = [e for e in mine if e.get("kind") == "final"]
     print(f"{'VERIFIED' if ok else 'FAILED'}: {run_id} steps={len(mine)} renders={len(renders)} final={final[-1]['output'].get('status') if final else None}")

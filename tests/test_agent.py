@@ -28,6 +28,7 @@ def test_tools_sealed_and_no_labels_or_sealed_patients():
 
 def test_planted_unverified_number_rejected(tmp_path, monkeypatch):
     monkeypatch.setenv("HELPCHORE_AGENT_TRAIL", str(tmp_path / "trail.jsonl"))
+    monkeypatch.setattr(agent, "LOGS", tmp_path)
     mock = _scripted([
         _call("pair_stats", patient="P1", from_visit="0w", to_visit="2w"),
         _call("render_and_sign", patient="P1", from_visit="0w", to_visit="2w",
@@ -43,6 +44,7 @@ def test_planted_unverified_number_rejected(tmp_path, monkeypatch):
 
 def test_three_rejections_need_human(tmp_path, monkeypatch):
     monkeypatch.setenv("HELPCHORE_AGENT_TRAIL", str(tmp_path / "trail.jsonl"))
+    monkeypatch.setattr(agent, "LOGS", tmp_path)
     bad = _call("render_and_sign", patient="P1", from_visit="0w", to_visit="2w",
                 narrative="The fraction rose by 42 percent since baseline.")
     res = agent.run_pair("P1", "0w", "2w", model_fn=_scripted([bad]))
@@ -52,7 +54,7 @@ def test_three_rejections_need_human(tmp_path, monkeypatch):
 def test_verify_run_with_no_private_key(tmp_path, monkeypatch, capsys):
     import checker
     root = Path(__file__).parent.parent
-    env = json.loads((root / "data" / "checker" / "example_report_P1_0w_2w.json").read_text())
+    env = json.loads((root / "logs" / "agent_runs" / "P1_0w_2w" / "envelope.json").read_text())
     trail = tmp_path / "trail.jsonl"
     monkeypatch.setenv("HELPCHORE_AGENT_TRAIL", str(trail))
     agent._log("P1_0w_2w", "tool", {"tool": "render_and_sign",
@@ -73,9 +75,28 @@ def test_verify_run_with_no_private_key(tmp_path, monkeypatch, capsys):
     assert not (keys_dir / "private_key.pem").exists()
 
 
+def test_edited_trail_output_fails_verify_run(tmp_path, monkeypatch, capsys):
+    trail = tmp_path / "trail.jsonl"
+    monkeypatch.setenv("HELPCHORE_AGENT_TRAIL", str(trail))
+    monkeypatch.setattr(agent, "LOGS", tmp_path)
+    agent._log("P1_0w_2w", "tool", {"tool": "pair_stats",
+                                    "input": {"patient": "P1"}, "output": {"status": "OK"}})
+    agent._log("P1_0w_2w", "final", {"input": {"patient": "P1"},
+                                     "output": {"status": "AWAITING_SIGNOFF"}})
+    assert agent.main(["verify", "P1_0w_2w"]) == 0
+    capsys.readouterr()
+    lines = trail.read_text(encoding="utf-8").splitlines()
+    edited = json.loads(lines[0]); edited["output"] = {"status": "EDITED"}
+    lines[0] = json.dumps(edited)
+    trail.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    assert agent.main(["verify", "P1_0w_2w"]) == 1
+    assert "FAILED" in capsys.readouterr().out
+
+
 def test_verify_cli_reruns_checks(tmp_path, monkeypatch, capsys):
     trail = tmp_path / "trail.jsonl"
     monkeypatch.setenv("HELPCHORE_AGENT_TRAIL", str(trail))
+    monkeypatch.setattr(agent, "LOGS", tmp_path)
     mock = _scripted([
         _call("pair_stats", patient="P1", from_visit="0w", to_visit="2w"),
         _call("render_and_sign", patient="P1", from_visit="0w", to_visit="2w",

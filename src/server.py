@@ -93,8 +93,8 @@ def frame_png(patient, date, cell, crop=True):
 
 def _committed_envelope(patient, frm, to):
     """Committed envelope for this pair, if one exists. Read-only; never signs."""
-    candidates = [ROOT / "data" / "checker" / f"example_report_{patient}_{frm}_{to}.json",
-                  ROOT / "logs" / "agent_runs" / f"{patient}_{frm}_{to}" / "envelope.json"]
+    candidates = [ROOT / "logs" / "agent_runs" / f"{patient}_{frm}_{to}" / "envelope.json",
+                  ROOT / "data" / "checker" / f"example_report_{patient}_{frm}_{to}.json"]
     for cand in candidates:
         if not cand.exists(): continue
         try: env = json.loads(cand.read_text())
@@ -104,7 +104,13 @@ def _committed_envelope(patient, frm, to):
             return env
     return None
 
-def _envelope_for_pair(patient, frm, to):
+def _committed_report(patient, frm, to):
+    for cand in [ROOT / "logs" / "agent_runs" / f"{patient}_{frm}_{to}" / "report.md",
+                 ROOT / "data" / "checker" / f"example_report_{patient}_{frm}_{to}.md"]:
+        if cand.exists(): return cand.read_text(encoding="utf-8")
+    return None
+
+def _envelope_for_pair(patient, frm, to, narrative=""):
     """(envelope, is_committed), or (None, False) when signing is disabled and
     no committed envelope exists. Never signs without a matching private key."""
     try:
@@ -112,7 +118,7 @@ def _envelope_for_pair(patient, frm, to):
     except (checker.NoSigningKey, checker.KeyMismatch):
         env = _committed_envelope(patient, frm, to)
         return (env, True) if env is not None else (None, False)
-    return checker.sign_payload(checker.build_payload(patient, frm, to)), False
+    return checker.sign_payload(checker.build_payload(patient, frm, to), narrative), False
 
 def public_mode():
     return os.environ.get("PUBLIC_MODE") == "1"
@@ -207,18 +213,28 @@ class H(BaseHTTPRequestHandler):
                 self.send_header("Content-Length", str(len(png))); self.end_headers(); self.wfile.write(png); return
             if path.startswith("/api/report/"):
                 _, _, _, patient, frm, to = path.split("/")
-                env, committed = _envelope_for_pair(patient, frm, to)
-                if env is None: return self.send_json({"status": "SIGNING_DISABLED"}, 409)
+                # Peek at committed envelope first: with no key we serve it as-is.
+                try: checker.load_signing_key(); has_key = True
+                except (checker.NoSigningKey, checker.KeyMismatch): has_key = False
                 narrative, nsrc = "Flow standardized change assessed against the combined noise band.", "template"
-                if committed:
+                if not has_key:
+                    env = _committed_envelope(patient, frm, to)
+                    if env is None: return self.send_json({"status": "SIGNING_DISABLED"}, 409)
+                    committed = True
+                    report = _committed_report(patient, frm, to) or checker.render_report(env, narrative)
                     ow = {"status": "SIGNING_DISABLED", "detail": "committed envelope served; no signing key present"}
                 else:
-                    spark = meta_api.spark_narrative(env["payload"])
+                    committed = False
+                    payload0 = checker.build_payload(patient, frm, to)
+                    spark = meta_api.spark_narrative(payload0)
                     if spark.get("status") == "OK" and spark.get("text") and not any(ch.isdigit() for ch in spark["text"]):
-                        narrative, nsrc = spark["text"].strip(), f"muse-spark-1.3 ({spark.get('_cache')})"
+                        cand = spark["text"].strip()
+                        try: checker.render_report({"payload": payload0}, cand); narrative, nsrc = cand, f"muse-spark-1.3 ({spark.get('_cache')})"
+                        except ValueError: pass
+                    env = checker.sign_payload(payload0, narrative)
+                    report = checker.render_report(env, narrative)
                     ow = None
-                report = checker.render_report(env, narrative)
-                ok, errs = checker.verify_envelope(env)
+                ok, errs = checker.verify_envelope(env, report_text=report)
                 aok, aerrs = checker.audit_report(report, env)
                 if ow is None: ow = meta_api.baseten_audit(report, env["payload"])
                 return self.send_json({"envelope": env, "report": report, "verified": ok, "verify_errors": errs,
