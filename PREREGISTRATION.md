@@ -110,4 +110,45 @@ worse** than BASE alone.
 
 ## Unseal Log
 
-(Reserved for P-12. No entries yet — no holdout data has been touched.)
+- **Unsealed:** 2026-10-31T12:37:09Z (single unsealing, P-12), at commit
+  `b01455134a88cdeab348ae55120c4fde73297029` (tag `eval-v1`; frozen pipeline
+  commit `f6aa1e1c91326f0ac9fb7eb13056aa667b2f10e4`). No changes to `src/` or
+  `tools/` (`git diff eval-v1 -- src/ tools/` is empty).
+- **Ingest:** only `Results/*.txt` label files for P3/P5 via HTTP Range from
+  the Figshare collection ZIPs (no AVI archives); hashes of all 239
+  downloaded files are in `data/fetch_manifest/fetch_log_holdout.json`.
+  Paid API calls: $0.
+- **Holdout size:** 239 runs, 13 visits, 11 visit pairs
+  (P3: 167 runs, 9 visits, 8 pairs; P5: 72 runs, 4 visits, 3 pairs).
+  Decisions in `data/tables/sealed_results.csv`; run/visit tables in
+  `data/tables/per_run_holdout.csv` / `per_visit_holdout.csv`.
+- **Frozen pipeline applied unchanged:** unpenalised binomial GLM retained
+  log-flow (AIC 1623.2 vs 1999.9 patient-only); standardised to 0.016 µL/s;
+  cluster bootstrap B=2000, seed 20261026; QC skip-rate gate 0.25;
+  t-calibrated RCV95. Decisions: 8 `within_RCV`, 0 `exceeds_RCV`,
+  3 `indeterminate_QC` (each indeterminate pair touches a visit with skip
+  rate 0.297–0.407).
+
+Prediction scorecard (ranges frozen in §6; reported as observed, nothing
+re-fitted or re-worded to force a match):
+
+- **(a) Flow slope — MET.** 13/13 visits (100%) show a negative within-visit
+  flow slope (predicted 80–100%); pooled holdout GLM slope −0.322
+  (predicted −0.60…−0.10).
+- **(b) Variance reduction — NOT MET.** Flow adjustment reduced
+  overdispersion in 13/13 visits (100%), above the predicted 60–90% range.
+  Residual adjusted phi stayed > 1 in 7/13 visits (53.8%), consistent with
+  the "majority" sub-expectation, but the headline share missed the range.
+- **(c) Decision changes — NOT MET (mixed).** Frozen vs naive decisions
+  differ for 5/11 pairs (45.5%; predicted 25–50% — met);
+  `indeterminate_QC` 3/11 (27.3%; predicted 20–50% — met); but
+  `exceeds_RCV` among decidable pairs is 0/8 (0%), below the predicted
+  20–45% — not met. The three largest adjusted changes (+0.174, −0.154,
+  −0.144) all sit in QC-blocked pairs, so the frozen rule returns no
+  decidable "exceeds" on this holdout.
+- **(d) Second-rater agreement — UNMEASURED.** Held uncalled to preserve
+  API budget ($0 paid calls in this step); no holdout rater number is
+  claimed. Dev reference only: cloud AC1 0.392, open-weight AC1 0.464.
+- **(e) SAM spicule concavity — UNMEASURED.** Held uncalled for the same
+  budget reason (no SAM run on holdout cells); no holdout SAM number is
+  claimed. Dev reference only: solidity difference −0.014, defects +0.60.
