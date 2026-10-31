@@ -77,6 +77,27 @@ def test_public_mode_write_endpoints_403(public):
     assert code == 200 and "CACHED DEMO" in body
 
 
+def test_no_key_report_and_tamper_use_committed_or_409(port, tmp_path, monkeypatch):
+    import checker
+    keys_dir = tmp_path / "keys"; keys_dir.mkdir()
+    pin = keys_dir / "public_key.hex"
+    pin.write_text(checker.pinned_public_key_hex() + "\n")
+    monkeypatch.setattr(checker, "KEYS", keys_dir)
+    monkeypatch.setattr(checker, "PINNED_PUBLIC_KEY", pin)
+    before = pin.read_bytes()
+    code, body = get(port, "/api/report/P1/0w/2w")
+    data = json.loads(body)
+    assert code == 200 and data["verified"] is True and data["envelope"]["payload"]["patient"] == "P1"
+    code, body = get(port, "/api/report/P1/0w/99w")
+    assert code == 409 and json.loads(body) == {"status": "SIGNING_DISABLED"}
+    code, body = post(port, "/api/tamper", json.dumps({"patient": "P1", "from": "0w", "to": "2w", "mode": "payload"}).encode())
+    assert code == 200 and json.loads(body)["checker_blocks"] is True
+    code, body = post(port, "/api/tamper", json.dumps({"patient": "P1", "from": "0w", "to": "99w", "mode": "payload"}).encode())
+    assert code == 409 and json.loads(body) == {"status": "SIGNING_DISABLED"}
+    assert pin.read_bytes() == before
+    assert not (keys_dir / "private_key.pem").exists()
+
+
 def test_public_mode_cache_only_models(monkeypatch, tmp_path):
     monkeypatch.setenv("PUBLIC_MODE", "1")
     monkeypatch.setattr(meta_api, "CACHE", tmp_path)

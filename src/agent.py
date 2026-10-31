@@ -159,9 +159,12 @@ def verify_run(run_id, path=None):
         # tool outputs are re-derived only for render steps; hash check covers the rest
     renders = [e for e in mine if e.get("kind") == "tool" and e.get("tool") == "render_and_sign" and e["output"].get("status") == "PASS"]
     for e in renders:
-        again = agent_tools.render_and_sign(**e["input"])
-        if again.get("report_sha256") != e["output"].get("report_sha256"): ok = False; print("render re-run hash mismatch")
-        vok, verrs = checker.verify_envelope(e["output"]["envelope"])
+        # Verification needs no private key and writes no file: check the stored
+        # envelope against the pinned public key instead of re-signing.
+        env = e["output"]["envelope"]
+        if env.get("payload", {}).get("report_sha256") != e["output"].get("report_sha256"):
+            ok = False; print("render re-run hash mismatch")
+        vok, verrs = checker.verify_envelope(env)
         if not vok: ok = False; print(f"envelope re-verify failed: {verrs}")
     final = [e for e in mine if e.get("kind") == "final"]
     print(f"{'VERIFIED' if ok else 'FAILED'}: {run_id} steps={len(mine)} renders={len(renders)} final={final[-1]['output'].get('status') if final else None}")

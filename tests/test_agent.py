@@ -49,6 +49,30 @@ def test_three_rejections_need_human(tmp_path, monkeypatch):
     assert res["status"] == "NEEDS_HUMAN" and res["rejections"] == 3
 
 
+def test_verify_run_with_no_private_key(tmp_path, monkeypatch, capsys):
+    import checker
+    root = Path(__file__).parent.parent
+    env = json.loads((root / "data" / "checker" / "example_report_P1_0w_2w.json").read_text())
+    trail = tmp_path / "trail.jsonl"
+    monkeypatch.setenv("HELPCHORE_AGENT_TRAIL", str(trail))
+    agent._log("P1_0w_2w", "tool", {"tool": "render_and_sign",
+                                    "input": {"patient": "P1", "from_visit": "0w", "to_visit": "2w", "narrative": ""},
+                                    "output": {"status": "PASS", "envelope": env,
+                                               "report_sha256": env["payload"]["report_sha256"]}})
+    agent._log("P1_0w_2w", "final", {"input": {"patient": "P1", "from_visit": "0w", "to_visit": "2w"},
+                                     "output": {"status": "AWAITING_SIGNOFF"}})
+    keys_dir = tmp_path / "keys"; keys_dir.mkdir()
+    pin = keys_dir / "public_key.hex"
+    pin.write_text(checker.pinned_public_key_hex() + "\n")
+    monkeypatch.setattr(checker, "KEYS", keys_dir)
+    monkeypatch.setattr(checker, "PINNED_PUBLIC_KEY", pin)
+    before = pin.read_bytes()
+    assert agent.main(["verify", "P1_0w_2w"]) == 0
+    assert "VERIFIED" in capsys.readouterr().out
+    assert pin.read_bytes() == before
+    assert not (keys_dir / "private_key.pem").exists()
+
+
 def test_verify_cli_reruns_checks(tmp_path, monkeypatch, capsys):
     trail = tmp_path / "trail.jsonl"
     monkeypatch.setenv("HELPCHORE_AGENT_TRAIL", str(trail))

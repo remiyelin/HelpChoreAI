@@ -1,11 +1,28 @@
 """Durable Step 5 tests: Checker gate + templated numbers + auditor. Run: uv run pytest tests/ -q"""
-import copy, sys
+import copy, json, sys
 from pathlib import Path
+import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 import checker
 
+ROOT = Path(__file__).parent.parent
+
 def _env():
-    return checker.sign_payload(checker.build_payload("P1", "0w", "2w"))
+    # Committed envelope: these tests must pass with no private key present.
+    return json.loads((ROOT / "data" / "checker" / "example_report_P1_0w_2w.json").read_text())
+
+def _patch_keys(monkeypatch, keys_dir: Path, pin_hex: str):
+    keys_dir.mkdir(parents=True, exist_ok=True)
+    pin = keys_dir / "public_key.hex"
+    pin.write_text(pin_hex + "\n")
+    monkeypatch.setattr(checker, "KEYS", keys_dir)
+    monkeypatch.setattr(checker, "PINNED_PUBLIC_KEY", pin)
+    return pin
+
+def _write_private(keys_dir: Path, key):
+    from cryptography.hazmat.primitives import serialization
+    (keys_dir / "private_key.pem").write_bytes(key.private_bytes(
+        serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
 
 def test_untampered_verifies_and_roundtrips(tmp_path):
     env = _env()
@@ -80,6 +97,66 @@ def test_unparseable_baseten_reply_returns_block(monkeypatch):
                         lambda *a, **k: {"status": "OK", "text": "not json at all", "_cache": "miss"})
     out = meta_api.baseten_audit("any report", {})
     assert out["status"] == "BLOCK" and out["verdict"] == "BLOCK"
+
+def test_no_private_key_sign_raises_and_pin_unchanged(tmp_path, monkeypatch):
+    pin = _patch_keys(monkeypatch, tmp_path / "keys", checker.pinned_public_key_hex())
+    before = pin.read_bytes()
+    with pytest.raises(checker.NoSigningKey):
+        checker.load_signing_key()
+    with pytest.raises(checker.NoSigningKey):
+        checker.sign_payload(_env()["payload"])
+    assert pin.read_bytes() == before
+    assert not (tmp_path / "keys" / "private_key.pem").exists()
+
+def test_fresh_key_envelope_rejected(tmp_path, monkeypatch):
+    _patch_keys(monkeypatch, tmp_path / "keys", checker.pinned_public_key_hex())
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives import serialization
+    forged = _env()
+    attacker = Ed25519PrivateKey.generate()
+    forged["signature_hex"] = attacker.sign(checker.canonical(forged["payload"])).hex()
+    forged["public_key_hex"] = attacker.public_key().public_bytes(
+        serialization.Encoding.Raw, serialization.PublicFormat.Raw).hex()
+    ok, errs = checker.verify_envelope(forged, check_tables=False)
+    assert not ok and errs
+
+def test_every_committed_envelope_verifies_with_no_private_key(tmp_path, monkeypatch):
+    pin = _patch_keys(monkeypatch, tmp_path / "keys", checker.pinned_public_key_hex())
+    before = pin.read_bytes()
+    files = sorted((ROOT / "logs" / "agent_runs").glob("*/envelope.json")) + \
+        sorted((ROOT / "data" / "checker").glob("*.json"))
+    assert files
+    for f in files:
+        ok, errs = checker.verify_envelope(json.loads(f.read_text()))
+        assert ok, (f.name, errs)
+    assert pin.read_bytes() == before
+    assert not (tmp_path / "keys" / "private_key.pem").exists()
+
+def test_wrong_private_key_raises_key_mismatch(tmp_path, monkeypatch):
+    keys_dir = tmp_path / "keys"
+    pin = _patch_keys(monkeypatch, keys_dir, checker.pinned_public_key_hex())
+    before = pin.read_bytes()
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    _write_private(keys_dir, Ed25519PrivateKey.generate())
+    with pytest.raises(checker.KeyMismatch):
+        checker.load_signing_key()
+    with pytest.raises(checker.KeyMismatch):
+        checker.sign_payload(_env()["payload"])
+    assert pin.read_bytes() == before
+
+def test_rotate_cli_only_writes_with_confirm(tmp_path, monkeypatch):
+    import importlib.util
+    keys_dir = tmp_path / "keys"
+    pin = _patch_keys(monkeypatch, keys_dir, "00" * 32)
+    spec = importlib.util.spec_from_file_location("rotate_key", ROOT / "tools" / "rotate_key.py")
+    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+    with pytest.raises(SystemExit):
+        mod.main([])
+    assert not (keys_dir / "private_key.pem").exists()
+    assert pin.read_text().strip() == "00" * 32
+    assert mod.main(["--confirm-rotate"]) == 0
+    key = checker.load_signing_key()  # new private key matches the rewritten pin
+    assert key is not None and pin.read_text().strip() != "00" * 32
 
 def test_spelled_out_number_narrative_rejected():
     env = _env()

@@ -80,21 +80,32 @@ def build_payload(patient: str, from_visit: str, to_visit: str) -> dict:
     payload["report_sha256"] = sha_bytes(render_report({"payload": payload}).encode())
     return payload
 
+class NoSigningKey(Exception):
+    """No private signing key is present; signing is disabled."""
+
+
+class KeyMismatch(Exception):
+    """The private key present does not match the pinned public key."""
+
+
 def pinned_public_key_hex() -> str:
     return PINNED_PUBLIC_KEY.read_text().strip().lower()
 
-def get_key() -> Ed25519PrivateKey:
-    KEYS.mkdir(parents=True, exist_ok=True)
+def load_signing_key() -> Ed25519PrivateKey:
+    """Read the private key only. Never generates a key and never writes any file."""
     kp = KEYS / "private_key.pem"
-    if kp.exists():
-        key = serialization.load_pem_private_key(kp.read_bytes(), password=None)
-    else:
-        key = Ed25519PrivateKey.generate()
-        kp.write_bytes(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
-                                         serialization.NoEncryption()))
+    if not kp.exists():
+        raise NoSigningKey(f"no signing key at {kp}; signing is disabled")
+    key = serialization.load_pem_private_key(kp.read_bytes(), password=None)
+    if not isinstance(key, Ed25519PrivateKey):
+        raise KeyMismatch("signing key is not an Ed25519 key")
     pub = key.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw).hex()
-    if not PINNED_PUBLIC_KEY.exists() or PINNED_PUBLIC_KEY.read_text().strip().lower() != pub:
-        PINNED_PUBLIC_KEY.write_text(pub + "\n")
+    try:
+        pinned = pinned_public_key_hex()
+    except Exception as e:
+        raise KeyMismatch("pinned public key missing") from e
+    if pub != pinned:
+        raise KeyMismatch("private key does not match pinned public key")
     return key
 
 def sign_payload(payload: dict) -> dict:
@@ -103,7 +114,7 @@ def sign_payload(payload: dict) -> dict:
         payload["payload_sha256"] = _payload_hash(payload)
     if not payload.get("report_sha256"):
         payload["report_sha256"] = sha_bytes(render_report({"payload": payload}).encode())
-    key = get_key()
+    key = load_signing_key()
     sig = key.sign(canonical(payload))
     pub = key.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw).hex()
     return {"payload": payload, "signature_hex": sig.hex(), "public_key_hex": pub}

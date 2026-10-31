@@ -91,6 +91,29 @@ def frame_png(patient, date, cell, crop=True):
     pts = [[round(float(x), 1), round(float(y), 1)] for x, y in contour[::3]]
     return png_gray(img), {"frame": frame_no, "pos_x": round(pos_x, 1), "frame_height": h, "frame_width": w, "contour_full": pts}
 
+def _committed_envelope(patient, frm, to):
+    """Committed envelope for this pair, if one exists. Read-only; never signs."""
+    candidates = [ROOT / "data" / "checker" / f"example_report_{patient}_{frm}_{to}.json",
+                  ROOT / "logs" / "agent_runs" / f"{patient}_{frm}_{to}" / "envelope.json"]
+    for cand in candidates:
+        if not cand.exists(): continue
+        try: env = json.loads(cand.read_text())
+        except Exception: continue
+        p = env.get("payload", {})
+        if (p.get("patient"), p.get("from_visit"), p.get("to_visit")) == (patient, frm, to):
+            return env
+    return None
+
+def _envelope_for_pair(patient, frm, to):
+    """(envelope, is_committed), or (None, False) when signing is disabled and
+    no committed envelope exists. Never signs without a matching private key."""
+    try:
+        checker.load_signing_key()
+    except (checker.NoSigningKey, checker.KeyMismatch):
+        env = _committed_envelope(patient, frm, to)
+        return (env, True) if env is not None else (None, False)
+    return checker.sign_payload(checker.build_payload(patient, frm, to)), False
+
 def public_mode():
     return os.environ.get("PUBLIC_MODE") == "1"
 
@@ -184,15 +207,20 @@ class H(BaseHTTPRequestHandler):
                 self.send_header("Content-Length", str(len(png))); self.end_headers(); self.wfile.write(png); return
             if path.startswith("/api/report/"):
                 _, _, _, patient, frm, to = path.split("/")
-                env = checker.sign_payload(checker.build_payload(patient, frm, to))
+                env, committed = _envelope_for_pair(patient, frm, to)
+                if env is None: return self.send_json({"status": "SIGNING_DISABLED"}, 409)
                 narrative, nsrc = "Flow standardized change assessed against the combined noise band.", "template"
-                spark = meta_api.spark_narrative(env["payload"])
-                if spark.get("status") == "OK" and spark.get("text") and not any(ch.isdigit() for ch in spark["text"]):
-                    narrative, nsrc = spark["text"].strip(), f"muse-spark-1.3 ({spark.get('_cache')})"
+                if committed:
+                    ow = {"status": "SIGNING_DISABLED", "detail": "committed envelope served; no signing key present"}
+                else:
+                    spark = meta_api.spark_narrative(env["payload"])
+                    if spark.get("status") == "OK" and spark.get("text") and not any(ch.isdigit() for ch in spark["text"]):
+                        narrative, nsrc = spark["text"].strip(), f"muse-spark-1.3 ({spark.get('_cache')})"
+                    ow = None
                 report = checker.render_report(env, narrative)
                 ok, errs = checker.verify_envelope(env)
                 aok, aerrs = checker.audit_report(report, env)
-                ow = meta_api.baseten_audit(report, env["payload"])
+                if ow is None: ow = meta_api.baseten_audit(report, env["payload"])
                 return self.send_json({"envelope": env, "report": report, "verified": ok, "verify_errors": errs,
                                        "audit_ok": aok, "audit_errors": aerrs, "narrative_source": nsrc,
                                        "cloud": {"model": "muse-spark-1.3", "narrative_source": nsrc, "checker_verified": ok},
@@ -253,7 +281,8 @@ class H(BaseHTTPRequestHandler):
             return self.send_json({"saved": True, "reviews": len(rev)})
         if self.path == "/api/tamper":
             mode = body.get("mode")
-            env = checker.sign_payload(checker.build_payload(body["patient"], body["from"], body["to"]))
+            env, _committed = _envelope_for_pair(body["patient"], body["from"], body["to"])
+            if env is None: return self.send_json({"status": "SIGNING_DISABLED"}, 409)
             report = checker.render_report(env, "Flow standardized change assessed against the combined noise band.")
             if mode == "number":
                 report = report.replace(f"{env['payload']['delta_adj']:+.4f}", "+0.9999")
