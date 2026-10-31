@@ -2,7 +2,22 @@
 import json, sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-import agent, agent_tools
+import agent, agent_tools, checker
+
+
+def _tmp_signing_key(monkeypatch, tmp_path):
+    """Throwaway signing key under tmp_path: tests must sign without the real key."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives import serialization
+    key = Ed25519PrivateKey.generate()
+    keys_dir = tmp_path / "keys"; keys_dir.mkdir(exist_ok=True)
+    (keys_dir / "private_key.pem").write_bytes(key.private_bytes(
+        serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
+    pin = keys_dir / "public_key.hex"
+    pin.write_text(key.public_key().public_bytes(
+        serialization.Encoding.Raw, serialization.PublicFormat.Raw).hex() + "\n")
+    monkeypatch.setattr(checker, "KEYS", keys_dir)
+    monkeypatch.setattr(checker, "PINNED_PUBLIC_KEY", pin)
 
 
 def _call(name, **args):
@@ -29,6 +44,7 @@ def test_tools_sealed_and_no_labels_or_sealed_patients():
 def test_planted_unverified_number_rejected(tmp_path, monkeypatch):
     monkeypatch.setenv("HELPCHORE_AGENT_TRAIL", str(tmp_path / "trail.jsonl"))
     monkeypatch.setattr(agent, "LOGS", tmp_path)
+    _tmp_signing_key(monkeypatch, tmp_path)
     mock = _scripted([
         _call("pair_stats", patient="P1", from_visit="0w", to_visit="2w"),
         _call("render_and_sign", patient="P1", from_visit="0w", to_visit="2w",
@@ -97,6 +113,7 @@ def test_verify_cli_reruns_checks(tmp_path, monkeypatch, capsys):
     trail = tmp_path / "trail.jsonl"
     monkeypatch.setenv("HELPCHORE_AGENT_TRAIL", str(trail))
     monkeypatch.setattr(agent, "LOGS", tmp_path)
+    _tmp_signing_key(monkeypatch, tmp_path)
     mock = _scripted([
         _call("pair_stats", patient="P1", from_visit="0w", to_visit="2w"),
         _call("render_and_sign", patient="P1", from_visit="0w", to_visit="2w",
