@@ -1,0 +1,139 @@
+{
+ "pairs": 21,
+ "passed_awaiting_signoff": 21,
+ "needs_human": 0,
+ "tool_calls": 63,
+ "rejections": 0,
+ "ledger": {
+  "spent_usd": 1.26,
+  "model_calls": 63
+ },
+ "results": [
+  {
+   "run_id": "P1_0w_2w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P1_2w_4w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P1_4w_6w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P1_6w_8w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P1_8w_10w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P1_10w_14w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P1_14w_20w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P1_20w_24w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P1_24w_29w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P1_29w_53w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P2_0w_2w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P2_2w_4w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P2_4w_6w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P2_6w_8w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P2_8w_12w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P2_12w_18w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P2_18w_22w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P2_22w_27w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P2_27w_51w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P4_0w_9w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  },
+  {
+   "run_id": "P4_9w_18w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 3,
+   "rejections": 0
+  }
+ ]
+}

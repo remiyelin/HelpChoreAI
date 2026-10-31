@@ -1,0 +1,40 @@
+{
+ "payload": {
+  "dataset_doi": "10.6084/m9.figshare.c.5793482",
+  "patient": "P2",
+  "from_visit": "6w",
+  "to_visit": "8w",
+  "treatment": "dasatinib on-treatment",
+  "delta_raw": -0.01,
+  "delta_adj": -0.0029,
+  "rcv95": 0.0394,
+  "decision": "within_RCV",
+  "ref_flow_ul_s": 0.016,
+  "measurand": "health==1 fraction among shape!=0, flow-standardized",
+  "disclaimer": "Research use only. RBC morphology is a peripheral target-engagement marker, not a measure of central nervous system progression. Every result must be reviewed by a qualified researcher using the per-cell visual overlay.",
+  "chain": {
+   "raw_manifest_sha256": "1cfe3d4ace57c8bf2f7fb0387da37454b59a7b9e5d0d612a8239bf3454c5639b",
+   "tables_sha256": {
+    "per_run.csv": "08048a68a15d7ffb94001917830492e8566430c810566449520c6ffee811e9ea",
+    "per_visit_adjusted_v3.csv": "2db19526fadac2908964e7c6244c054f932671d53e08691bf41221b578f48e9e",
+    "visit_pairs_decisions_v3.csv": "b07d04a8f62f5d66b8f24766684c0884d59368a5e068ae5f3594aa9bf8303f52"
+   },
+   "hashed_files": [
+    "data/fetch_manifest/dev_P1_entries.json",
+    "data/fetch_manifest/dev_P2_entries.json",
+    "data/fetch_manifest/dev_P4_entries.json",
+    "data/fetch_manifest/fetch_log.json",
+    "data/fetch_manifest/figshare_articles.json",
+    "data/fetch_manifest/figshare_files.json",
+    "data/fetch_manifest/p1_avi_entries.json",
+    "data/tables/per_run.csv",
+    "data/tables/per_visit_adjusted_v3.csv",
+    "data/tables/visit_pairs_decisions_v3.csv"
+   ]
+  },
+  "payload_sha256": "f93a8021a456401ef462298df45d9080995d2fbf5ee474495cfdd8e316e1006c",
+  "report_sha256": "eec73e7d594ea20c9a5df09a05cbd00a9bf8677ecedff5789b1e6266e9de5cd3"
+ },
+ "signature_hex": "62971c5cb7c128affe308aef7b35e8d7c38f664972cbe4ed89befa3c261bab6463d8a490e0e88d49957fea836f6f5130fd7a92f9c9809ef8f4fb19616832ae0d",
+ "public_key_hex": "0f7fe36f836cc72b67a6b573a11d2684b4db3a2221df11341151824e600ea072"
+}
