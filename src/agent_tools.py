@@ -34,6 +34,25 @@ def _seal(obj: dict) -> dict:
     return out
 
 
+CHECKS_ENABLED = True  # tools/agent_eval.py toggles this for the off-vs-on comparison
+
+_RUN = {"run_id": None, "calls": []}  # per-run tool history: [(name, args), ...]
+
+
+def begin_run(run_id):
+    _RUN["run_id"] = run_id
+    _RUN["calls"] = []
+
+
+def _ran(name, patient, from_visit=None, to_visit=None, visit=None):
+    for n, a in _RUN["calls"]:
+        if n != name or a.get("patient") != patient: continue
+        if from_visit is not None and (a.get("from_visit") != from_visit or a.get("to_visit") != to_visit): continue
+        if visit is not None and a.get("visit") != visit: continue
+        return True
+    return False
+
+
 def _guard(patient):
     if patient not in DEV_PATIENTS:
         return _seal({"status": "ERROR", "error": "patient_not_in_dev_set"})
@@ -90,14 +109,18 @@ def pair_stats(patient: str, from_visit: str, to_visit: str) -> dict:
 def qc_gate(patient: str, from_visit: str, to_visit: str) -> dict:
     if (g := _guard(patient)) is not None: return g
     pv = pd.read_csv(TABLES / "per_visit_adjusted_v3.csv")
-    rates = {}
+    rates, kept, reason_codes = {}, {}, []
     for visit in (from_visit, to_visit):
         sub = pv[(pv.patient == patient) & (pv.visit == visit)]
         if len(sub) != 1: return _seal({"status": "ERROR", "error": "visit_not_found"})
         rates[visit] = round(float(sub.iloc[0].skip_rate), 4)
-    blocked = any(v > 0.25 for v in rates.values())
+        kept[visit] = int(sub.iloc[0].n_kept)
+        if rates[visit] > 0.25: reason_codes.append("HIGH_SKIP_RATE")
+        if kept[visit] < 500: reason_codes.append("LOW_KEPT_CELLS")
+    blocked = bool(reason_codes)
     return _seal({"status": "BLOCK" if blocked else "PASS", "patient": patient,
-                  "skip_rates": rates, "threshold": 0.25, "qc_blocked": blocked})
+                  "skip_rates": rates, "n_kept": kept, "threshold": 0.25, "qc_blocked": blocked,
+                  "reason_codes": reason_codes})
 
 
 def sample_cells(patient: str, visit: str, n: int) -> dict:
@@ -129,14 +152,56 @@ def rater_summary(patient: str, visit: str) -> dict:
     return _seal(out)
 
 
+ADVICE_PATTERNS = [r"\b(doing better|doing worse|getting better|getting worse|responding well|responding poorly)\b",
+                   r"\b(improv\w+|worsen\w+)\s+on\s+(the\s+)?(dose|therapy|treatment|dasatinib|lithium)\b",
+                   r"\b(continue|keep taking|stay on|stop|start|increase|reduce|adjust)\b[^.]{0,24}\b(dose|therapy|treatment|dasatinib|lithium)\b",
+                   r"\b(dose|therapy|treatment)\s+(seems|looks|appears)\s+(right|fine|correct|effective|working)\b",
+                   r"\btherapy\s+is\s+working\b", r"\btreatment\s+is\s+working\b"]
+DECISION_CLAIM = r"\b(exceeds|exceeded|real change|significant change|change detected|detected a change|clear decline|clear increase)\b"
+NO_DECISION_WORDS = ("no decision", "cannot", "indeterminate", "blocked", "skip", "kept cells", "quality", "insufficient", "refused")
+
+
+def _refused(code, feedback):
+    return _seal({"status": f"REFUSED_{code}", "feedback": feedback})
+
+
 def render_and_sign(patient: str, from_visit: str, to_visit: str, narrative: str) -> dict:
-    if (g := _guard(patient)) is not None: return g
+    if patient not in DEV_PATIENTS:
+        return _refused("UNKNOWN_PATIENT",
+                        f"patient {patient!r} is not in the audited dev set; check the patient id and try again")
+    if CHECKS_ENABLED:
+        missing = [t for t in ("pair_stats", "qc_gate")
+                   if not _ran(t, patient, from_visit, to_visit)]
+        if missing:
+            return _refused("MISSING_PREREQUISITES",
+                            "render_and_sign cannot sign yet: in this run you have not run "
+                            + " and ".join(missing) + f" for {patient} {from_visit} -> {to_visit}. "
+                            "Run the missing tool(s) first, read their outputs, then call render_and_sign again.")
+        low = (narrative or "").lower()
+        if any(re.search(p, low) for p in ADVICE_PATTERNS):
+            return _refused("CLINICAL_ADVICE",
+                            "the narrative reads as clinical advice or a treatment judgement; "
+                            "describe only what the measurements show, without advising on therapy or dose")
+        stats = pair_stats(patient, from_visit, to_visit)
+        if stats.get("decision") == "indeterminate_QC":
+            gate = qc_gate(patient, from_visit, to_visit)
+            codes = gate.get("reason_codes", [])
+            if re.search(DECISION_CLAIM, low):
+                return _refused("QC_NO_DECISION",
+                                "this pair has no decision (reason codes: " + ", ".join(codes) +
+                                "); the narrative must not claim a change. State why there is no decision, using those reason codes.")
+            if not any(w in low for w in NO_DECISION_WORDS):
+                return _refused("QC_REASON_REQUIRED",
+                                "this pair has no decision (reason codes: " + ", ".join(codes) +
+                                "); the narrative must say why there is no decision, using those reason codes in words.")
     # Checker inside the tool: any narrative number not produced by a tool output
     # of this run is rejected; feedback names the offending claim, never the truth.
     allowed = set()
     _collect_numbers(pair_stats(patient, from_visit, to_visit), allowed)
     _collect_numbers(qc_gate(patient, from_visit, to_visit), allowed)
-    for num in _numbers_in(narrative):
+    if not CHECKS_ENABLED:
+        allowed.update(float(x) for x in _numbers_in(narrative))  # off mode: no narrative checks
+    for num in _numbers_in(narrative) if CHECKS_ENABLED else []:
         if num == -1.0 or round(num, 4) not in allowed:
             return _seal({"status": "REJECTED_UNVERIFIED_NUMBER",
                           "feedback": "narrative contains a number that does not appear in any "
@@ -157,8 +222,11 @@ def render_and_sign(patient: str, from_visit: str, to_visit: str, narrative: str
     if not ok or not aok:
         return _seal({"status": "REJECTED_UNVERIFIED_NUMBER",
                       "feedback": f"checker verification failed: {errs + aerrs}"})
+    gate = qc_gate(patient, from_visit, to_visit)
     return _seal({"status": "PASS", "final_status": "AWAITING_SIGNOFF", "patient": patient,
                   "from_visit": from_visit, "to_visit": to_visit, "report": report,
+                  "decision": env["payload"].get("decision"),
+                  "reason_codes": gate.get("reason_codes", []),
                   "report_sha256": env["payload"]["report_sha256"], "envelope": env})
 
 
@@ -170,6 +238,7 @@ TOOLS = {"list_pairs": list_pairs, "pair_stats": pair_stats, "qc_gate": qc_gate,
 def call_tool(name: str, args: dict) -> dict:
     fn = TOOLS.get(name)
     if fn is None: return _seal({"status": "ERROR", "error": f"unknown_tool:{name}"})
+    _RUN["calls"].append((name, dict(args or {})))
     try:
         return fn(**(args or {}))
     except TypeError as e:

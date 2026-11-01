@@ -6,4 +6,4 @@ Change (raw): -0.0920 | Change (flow-adjusted): -0.0838 | RCV95 band: 0.0372
 Decision: indeterminate_QC
 Checker payload SHA-256: d09a31456fdfc20bb142273815f352eabbf51f68c397e41e3bdab717d7c6259c
 Disclaimer: Research use only. RBC morphology is a peripheral target-engagement marker, not a measure of central nervous system progression. Every result must be reviewed by a qualified researcher using the per-cell visual overlay.
-Narrative: The visit-to-visit change during dasatinib on-treatment was compared with the combined measurement-and-protocol noise band and classified as indeterminate_QC.
+Narrative: Audit review finds this visit pair lacks a reliable decision due to quality control block. The earlier visit shows elevated skip rate above acceptance threshold, triggering high skip rate flag and preventing comparison. Sampled cells and rater summaries were inspected for context, yet quality failure remains unresolved. As a result, change assessment cannot proceed until quality criteria are met.

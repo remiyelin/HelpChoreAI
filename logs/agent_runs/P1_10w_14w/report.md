@@ -6,4 +6,4 @@ Change (raw): +0.0443 | Change (flow-adjusted): +0.0491 | RCV95 band: 0.0444
 Decision: indeterminate_QC
 Checker payload SHA-256: 7eb0fe2fa7fb21383631f3853804a6fa762b357a064dd4d1beabe52ef15a3358
 Disclaimer: Research use only. RBC morphology is a peripheral target-engagement marker, not a measure of central nervous system progression. Every result must be reviewed by a qualified researcher using the per-cell visual overlay.
-Narrative: Comparison blocked by elevated skip rate at follow-up with indeterminate change.
+Narrative: Audit review finds quality gate blocked comparison due to elevated skip rate at later visit above threshold, yielding indeterminate status with lack of decision basis. Sampled cell metrics were inspected merely for context and rater summaries were reviewed showing uncertain coverage at earlier visit with absent coverage at later visit, supporting lack of reliable basis for change assessment. No clinical guidance is offered.

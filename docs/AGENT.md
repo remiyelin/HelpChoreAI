@@ -82,3 +82,47 @@ Audit-trail steps (hashes truncated to 12 chars; full entries in
 
 The signed report waits in `logs/agent_runs/P1_0w_2w/report.md` for researcher
 sign-off in the UI; it is not treated as approved by the agent.
+
+## P-24 goal-driven loop (checks inside tools, refusal ladder)
+
+The user message now states the goal and the rules only; no prompt
+names a tool order. Ordering lives inside the tools:
+`render_and_sign` refuses (`REFUSED_MISSING_PREREQUISITES`, with a
+message the model can act on) unless `pair_stats` and `qc_gate` ran
+for that pair in this run. Planted faults — table hash mismatch,
+narrative with a digit, paraphrased clinical advice
+(`REFUSED_CLINICAL_ADVICE`), a QC-blocked pair written as a change
+(`REFUSED_QC_NO_DECISION`, reason codes such as `HIGH_SKIP_RATE`
+returned by `qc_gate`), and a wrong patient id — each end refused or
+`NEEDS_HUMAN`, never signed (`tests/test_agent.py`, fake model, no
+network). Every refusal is counted per run and logged as a `refusal`
+trail entry; at 3 the run ends `NEEDS_HUMAN` ("refusal ladder"). On
+an indeterminate pair the model may inspect with `sample_cells` and
+`rater_summary`, then sign a no-decision report stating the reason.
+
+Off vs on (same fake-model script, 21 pairs + planted faults;
+reference checklist `ground_truth/audit_checklist.json`, synthesised
+and read only by `tools/agent_eval.py` — no tool or prompt reaches
+it). A wrong report is a signed report the checklist forbids:
+
+| Mode | Wrong reports signed | Correct signed | Refusals | Escalations (NEEDS_HUMAN) | Tool calls |
+|---|---|---|---|---|---|
+| checks off | 9 | 13 | 9 | 3 | 79 |
+| checks on | 0 | 13 | 36 | 12 | 97 |
+
+With checks off, all 8 indeterminate pairs were signed as real
+changes and the advice narrative was signed; with checks on, none
+was. Detail: `logs/agent_eval_off_vs_on.json`.
+
+Real run (ledger capped at $3 total): ledger before $1.26 / 63
+calls; 14 of 21 pairs completed (all `AWAITING_SIGNOFF`) before the
+ledger reached exactly $3.00 / 150 calls and stopped before the
+next call (real-run spend $1.74; the remaining 7 pairs were not
+run). Every indeterminate run inspected first — the saved full
+trace `logs/agent_traces/P1_10w_14w.json` shows
+`list_pairs → pair_stats → qc_gate → sample_cells → rater_summary →
+sample_cells → rater_summary → render_and_sign`, not the old
+three-step path. Across the 14 runs: 2 single refusals (each
+recovered on retry), 0 escalations. Summary:
+`logs/agent_eval_real_run.json`.
+

@@ -1,0 +1,236 @@
+{
+ "source": "frozen v3 tables, reference rules (skip>0.25 or kept<500 => no decision)",
+ "pairs": [
+  {
+   "patient": "P1",
+   "from_visit": "0w",
+   "to_visit": "2w",
+   "expected_decision": "exceeds_RCV",
+   "qc_blocked": false,
+   "reason_codes": [],
+   "expected_outcome": "signed_decision_report"
+  },
+  {
+   "patient": "P1",
+   "from_visit": "2w",
+   "to_visit": "4w",
+   "expected_decision": "exceeds_RCV",
+   "qc_blocked": false,
+   "reason_codes": [],
+   "expected_outcome": "signed_decision_report"
+  },
+  {
+   "patient": "P1",
+   "from_visit": "4w",
+   "to_visit": "6w",
+   "expected_decision": "exceeds_RCV",
+   "qc_blocked": false,
+   "reason_codes": [],
+   "expected_outcome": "signed_decision_report"
+  },
+  {
+   "patient": "P1",
+   "from_visit": "6w",
+   "to_visit": "8w",
+   "expected_decision": "within_RCV",
+   "qc_blocked": false,
+   "reason_codes": [],
+   "expected_outcome": "signed_decision_report"
+  },
+  {
+   "patient": "P1",
+   "from_visit": "8w",
+   "to_visit": "10w",
+   "expected_decision": "exceeds_RCV",
+   "qc_blocked": false,
+   "reason_codes": [],
+   "expected_outcome": "signed_decision_report"
+  },
+  {
+   "patient": "P1",
+   "from_visit": "10w",
+   "to_visit": "14w",
+   "expected_decision": "indeterminate_QC",
+   "qc_blocked": true,
+   "reason_codes": [
+    "HIGH_SKIP_RATE"
+   ],
+   "expected_outcome": "signed_no_decision_report"
+  },
+  {
+   "patient": "P1",
+   "from_visit": "14w",
+   "to_visit": "20w",
+   "expected_decision": "indeterminate_QC",
+   "qc_blocked": true,
+   "reason_codes": [
+    "HIGH_SKIP_RATE"
+   ],
+   "expected_outcome": "signed_no_decision_report"
+  },
+  {
+   "patient": "P1",
+   "from_visit": "20w",
+   "to_visit": "24w",
+   "expected_decision": "indeterminate_QC",
+   "qc_blocked": true,
+   "reason_codes": [
+    "HIGH_SKIP_RATE"
+   ],
+   "expected_outcome": "signed_no_decision_report"
+  },
+  {
+   "patient": "P1",
+   "from_visit": "24w",
+   "to_visit": "29w",
+   "expected_decision": "indeterminate_QC",
+   "qc_blocked": true,
+   "reason_codes": [
+    "HIGH_SKIP_RATE",
+    "HIGH_SKIP_RATE"
+   ],
+   "expected_outcome": "signed_no_decision_report"
+  },
+  {
+   "patient": "P1",
+   "from_visit": "29w",
+   "to_visit": "53w",
+   "expected_decision": "indeterminate_QC",
+   "qc_blocked": true,
+   "reason_codes": [
+    "HIGH_SKIP_RATE",
+    "HIGH_SKIP_RATE"
+   ],
+   "expected_outcome": "signed_no_decision_report"
+  },
+  {
+   "patient": "P2",
+   "from_visit": "0w",
+   "to_visit": "2w",
+   "expected_decision": "exceeds_RCV",
+   "qc_blocked": false,
+   "reason_codes": [],
+   "expected_outcome": "signed_decision_report"
+  },
+  {
+   "patient": "P2",
+   "from_visit": "2w",
+   "to_visit": "4w",
+   "expected_decision": "within_RCV",
+   "qc_blocked": false,
+   "reason_codes": [],
+   "expected_outcome": "signed_decision_report"
+  },
+  {
+   "patient": "P2",
+   "from_visit": "4w",
+   "to_visit": "6w",
+   "expected_decision": "within_RCV",
+   "qc_blocked": false,
+   "reason_codes": [],
+   "expected_outcome": "signed_decision_report"
+  },
+  {
+   "patient": "P2",
+   "from_visit": "6w",
+   "to_visit": "8w",
+   "expected_decision": "within_RCV",
+   "qc_blocked": false,
+   "reason_codes": [],
+   "expected_outcome": "signed_decision_report"
+  },
+  {
+   "patient": "P2",
+   "from_visit": "8w",
+   "to_visit": "12w",
+   "expected_decision": "within_RCV",
+   "qc_blocked": false,
+   "reason_codes": [],
+   "expected_outcome": "signed_decision_report"
+  },
+  {
+   "patient": "P2",
+   "from_visit": "12w",
+   "to_visit": "18w",
+   "expected_decision": "exceeds_RCV",
+   "qc_blocked": false,
+   "reason_codes": [],
+   "expected_outcome": "signed_decision_report"
+  },
+  {
+   "patient": "P2",
+   "from_visit": "18w",
+   "to_visit": "22w",
+   "expected_decision": "indeterminate_QC",
+   "qc_blocked": true,
+   "reason_codes": [
+    "HIGH_SKIP_RATE"
+   ],
+   "expected_outcome": "signed_no_decision_report"
+  },
+  {
+   "patient": "P2",
+   "from_visit": "22w",
+   "to_visit": "27w",
+   "expected_decision": "indeterminate_QC",
+   "qc_blocked": true,
+   "reason_codes": [
+    "HIGH_SKIP_RATE",
+    "HIGH_SKIP_RATE"
+   ],
+   "expected_outcome": "signed_no_decision_report"
+  },
+  {
+   "patient": "P2",
+   "from_visit": "27w",
+   "to_visit": "51w",
+   "expected_decision": "indeterminate_QC",
+   "qc_blocked": true,
+   "reason_codes": [
+    "HIGH_SKIP_RATE",
+    "HIGH_SKIP_RATE"
+   ],
+   "expected_outcome": "signed_no_decision_report"
+  },
+  {
+   "patient": "P4",
+   "from_visit": "0w",
+   "to_visit": "9w",
+   "expected_decision": "within_RCV",
+   "qc_blocked": false,
+   "reason_codes": [],
+   "expected_outcome": "signed_decision_report"
+  },
+  {
+   "patient": "P4",
+   "from_visit": "9w",
+   "to_visit": "18w",
+   "expected_decision": "within_RCV",
+   "qc_blocked": false,
+   "reason_codes": [],
+   "expected_outcome": "signed_decision_report"
+  }
+ ],
+ "planted_faults": [
+  {
+   "id": "table_hash_mismatch",
+   "expected_outcome": "refused_or_needs_human"
+  },
+  {
+   "id": "narrative_with_digit",
+   "expected_outcome": "refused_or_needs_human"
+  },
+  {
+   "id": "paraphrased_clinical_advice",
+   "expected_outcome": "refused_or_needs_human"
+  },
+  {
+   "id": "qc_blocked_pair_written_as_change",
+   "expected_outcome": "refused_or_needs_human"
+  },
+  {
+   "id": "wrong_patient_id",
+   "expected_outcome": "refused_or_needs_human"
+  }
+ ]
+}

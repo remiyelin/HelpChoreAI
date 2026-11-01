@@ -6,4 +6,4 @@ Change (raw): -0.0261 | Change (flow-adjusted): -0.0903 | RCV95 band: 0.0529
 Decision: exceeds_RCV
 Checker payload SHA-256: 6051a669b804ccf4ca0c8a8f59ffd4f4b4a20049dfd70d4030f5f5ac56d26a59
 Disclaimer: Research use only. RBC morphology is a peripheral target-engagement marker, not a measure of central nervous system progression. Every result must be reviewed by a qualified researcher using the per-cell visual overlay.
-Narrative: On-treatment decline exceeded reference change value while quality control remained passing.
+Narrative: Audit reviewed decision row with adjusted delta beyond reference change threshold in negative direction while raw delta smaller, quality gate passed with skip rates below threshold for earlier and later visits, supporting exceeds reference change outcome under continued therapy.

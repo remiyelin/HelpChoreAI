@@ -1,0 +1,835 @@
+{
+ "run_id": "P1_10w_14w",
+ "tools_used": [
+  "list_pairs",
+  "pair_stats",
+  "qc_gate",
+  "sample_cells",
+  "rater_summary",
+  "sample_cells",
+  "rater_summary",
+  "render_and_sign"
+ ],
+ "entries": [
+  {
+   "ts": "2026-11-01T14:11:29Z",
+   "run_id": "P1_10w_14w",
+   "kind": "model",
+   "input": {
+    "messages": [
+     {
+      "role": "system",
+      "content": "You are a research audit agent. Your goal is to audit exactly one visit pair and produce a signed audit report, or a signed report that explains why no decision can be made. Rules: every number must come from a tool output; your narrative must contain no digits, no spelled-out numbers and no percent words; never invent numbers or clinical advice. Tools may refuse a call and tell you why; read the refusal and adapt. When a pair has no decision, you may inspect sampled cells and rater summaries, and the narrative must state why there is no decision."
+     },
+     {
+      "role": "user",
+      "content": "Goal: audit pair P1 10w -> 14w and produce a signed audit report. If no decision can be made for this pair, produce a signed report that says why. Rules: numbers only from tools; no digits, spelled-out numbers or percent words in your narrative; no clinical advice."
+     }
+    ]
+   },
+   "output": {
+    "content": "Auditing your requested pair \u2014 gathering the decision record to sign off.",
+    "refusal": null,
+    "tool_calls": [
+     {
+      "id": "call_e3cc5f22-ea59-4c07-a20e-6d6edd3b4fea",
+      "type": "function",
+      "function": {
+       "name": "list_pairs",
+       "arguments": "{\"patient\":\"P1\"}"
+      }
+     }
+    ],
+    "role": "assistant"
+   },
+   "input_sha256": "ee32b15cc94a25e2b1dca9942eccd24339bb746dfadcb6d56acbf3af1d449271",
+   "output_sha256": "4cb73c9161b24cb8520b579f13f5e16402f77bf61b2a98a9e9fe83dbc168ce0f",
+   "prev_sha256": "ef8a565ff4227516ac7dd9787396bcd2f2f9c67dd79f17a34a8f24e90def2a5e",
+   "entry_sha256": "fbac6e36a79c14366490d540287a96e41a0287982b819e16617c5bbcbcc79b0d"
+  },
+  {
+   "ts": "2026-11-01T14:11:29Z",
+   "run_id": "P1_10w_14w",
+   "kind": "tool",
+   "tool": "list_pairs",
+   "input": {
+    "patient": "P1"
+   },
+   "output": {
+    "status": "OK",
+    "patient": "P1",
+    "pairs": [
+     {
+      "from_visit": "0w",
+      "to_visit": "2w",
+      "decision": "exceeds_RCV"
+     },
+     {
+      "from_visit": "2w",
+      "to_visit": "4w",
+      "decision": "exceeds_RCV"
+     },
+     {
+      "from_visit": "4w",
+      "to_visit": "6w",
+      "decision": "exceeds_RCV"
+     },
+     {
+      "from_visit": "6w",
+      "to_visit": "8w",
+      "decision": "within_RCV"
+     },
+     {
+      "from_visit": "8w",
+      "to_visit": "10w",
+      "decision": "exceeds_RCV"
+     },
+     {
+      "from_visit": "10w",
+      "to_visit": "14w",
+      "decision": "indeterminate_QC"
+     },
+     {
+      "from_visit": "14w",
+      "to_visit": "20w",
+      "decision": "indeterminate_QC"
+     },
+     {
+      "from_visit": "20w",
+      "to_visit": "24w",
+      "decision": "indeterminate_QC"
+     },
+     {
+      "from_visit": "24w",
+      "to_visit": "29w",
+      "decision": "indeterminate_QC"
+     },
+     {
+      "from_visit": "29w",
+      "to_visit": "53w",
+      "decision": "indeterminate_QC"
+     }
+    ],
+    "sha256": "7eaffa2e4fd5d1fa9f3b52155adc9a9ffbbb03766e3671e0df9f13d6673e702f"
+   },
+   "input_sha256": "e14d6d35232b6401ca3a0b8fbbb2553921e62c701dc15446693c795c60582c4f",
+   "output_sha256": "ed6f9b11d5854b2910876db825afb3704f0dc6169652c94521c62e89981fa1a5",
+   "prev_sha256": "fbac6e36a79c14366490d540287a96e41a0287982b819e16617c5bbcbcc79b0d",
+   "entry_sha256": "b6ff655f25d53668a3cd8597dbdc521202e51a13946c49a909286b8cb4cca7ad"
+  },
+  {
+   "ts": "2026-11-01T14:11:30Z",
+   "run_id": "P1_10w_14w",
+   "kind": "model",
+   "input": {
+    "messages": [
+     {
+      "content": "Auditing your requested pair \u2014 gathering the decision record to sign off.",
+      "refusal": null,
+      "tool_calls": [
+       {
+        "id": "call_e3cc5f22-ea59-4c07-a20e-6d6edd3b4fea",
+        "type": "function",
+        "function": {
+         "name": "list_pairs",
+         "arguments": "{\"patient\":\"P1\"}"
+        }
+       }
+      ],
+      "role": "assistant"
+     },
+     {
+      "role": "tool",
+      "tool_call_id": "call_e3cc5f22-ea59-4c07-a20e-6d6edd3b4fea",
+      "name": "list_pairs",
+      "content": "{\"status\": \"OK\", \"patient\": \"P1\", \"pairs\": [{\"from_visit\": \"0w\", \"to_visit\": \"2w\", \"decision\": \"exceeds_RCV\"}, {\"from_visit\": \"2w\", \"to_visit\": \"4w\", \"decision\": \"exceeds_RCV\"}, {\"from_visit\": \"4w\", \"to_visit\": \"6w\", \"decision\": \"exceeds_RCV\"}, {\"from_visit\": \"6w\", \"to_visit\": \"8w\", \"decision\": \"within_RCV\"}, {\"from_visit\": \"8w\", \"to_visit\": \"10w\", \"decision\": \"exceeds_RCV\"}, {\"from_visit\": \"10w\", \"to_visit\": \"14w\", \"decision\": \"indeterminate_QC\"}, {\"from_visit\": \"14w\", \"to_visit\": \"20w\", \"decision\": \"indeterminate_QC\"}, {\"from_visit\": \"20w\", \"to_visit\": \"24w\", \"decision\": \"indeterminate_QC\"}, {\"from_visit\": \"24w\", \"to_visit\": \"29w\", \"decision\": \"indeterminate_QC\"}, {\"from_visit\": \"29w\", \"to_visit\": \"53w\", \"decision\": \"indeterminate_QC\"}], \"sha256\": \"7eaffa2e4fd5d1fa9f3b52155adc9a9ffbbb03766e3671e0df9f13d6673e702f\"}"
+     }
+    ]
+   },
+   "output": {
+    "content": "That pair is indeterminate \u2014 I'll check the quality gates to explain why.",
+    "refusal": null,
+    "tool_calls": [
+     {
+      "id": "call_02b23b65-7bbb-4d0f-8ed2-5d0b9a1f1fdd",
+      "type": "function",
+      "function": {
+       "name": "pair_stats",
+       "arguments": "{\"from_visit\":\"10w\",\"patient\":\"P1\",\"to_visit\":\"14w\"}"
+      }
+     }
+    ],
+    "role": "assistant"
+   },
+   "input_sha256": "e2142e6974f9585c9174fdde899c37f8c38acd5b53d01e4827369f2f127b656f",
+   "output_sha256": "e5c3fcb6692417c43b99ebfbe4f78f468abccca2b4051e60041f8792d84e5e9c",
+   "prev_sha256": "b6ff655f25d53668a3cd8597dbdc521202e51a13946c49a909286b8cb4cca7ad",
+   "entry_sha256": "163ef0e3ea3675f562de0bd563a38b033e9ce7c878db06860e3b2f9adb801e52"
+  },
+  {
+   "ts": "2026-11-01T14:11:30Z",
+   "run_id": "P1_10w_14w",
+   "kind": "tool",
+   "tool": "pair_stats",
+   "input": {
+    "from_visit": "10w",
+    "patient": "P1",
+    "to_visit": "14w"
+   },
+   "output": {
+    "status": "OK",
+    "patient": "P1",
+    "from_visit": "10w",
+    "to_visit": "14w",
+    "treatment": "dasatinib on-treatment",
+    "delta_raw": 0.0443,
+    "delta_adj": 0.0491,
+    "rcv95": 0.0444,
+    "decision": "indeterminate_QC",
+    "run_details": {
+     "10w": {
+      "n_runs": 16,
+      "n_total": 1836,
+      "mean_flow_ul_s": 0.013281,
+      "mean_skip_rate": 0.0883
+     },
+     "14w": {
+      "n_runs": 16,
+      "n_total": 2363,
+      "mean_flow_ul_s": 0.013281,
+      "mean_skip_rate": 0.2845
+     }
+    },
+    "sha256": "96d2643a85da2edcd86c7ad40338b22f6e630e19c193c54c6423555e9d9a9ffe"
+   },
+   "input_sha256": "3927d4c507573fe8687c59419488489f5316764a26124deff2fd77b5ef2ede18",
+   "output_sha256": "ade51c4884941161ddf7a96cd335a1a2f49f110b75ef38fe7da0ed8c69f12334",
+   "prev_sha256": "163ef0e3ea3675f562de0bd563a38b033e9ce7c878db06860e3b2f9adb801e52",
+   "entry_sha256": "8ef203b8a11f315062ad71fe43799937b928cd5d287057275bf5607d74351bb8"
+  },
+  {
+   "ts": "2026-11-01T14:11:33Z",
+   "run_id": "P1_10w_14w",
+   "kind": "model",
+   "input": {
+    "messages": [
+     {
+      "content": "That pair is indeterminate \u2014 I'll check the quality gates to explain why.",
+      "refusal": null,
+      "tool_calls": [
+       {
+        "id": "call_02b23b65-7bbb-4d0f-8ed2-5d0b9a1f1fdd",
+        "type": "function",
+        "function": {
+         "name": "pair_stats",
+         "arguments": "{\"from_visit\":\"10w\",\"patient\":\"P1\",\"to_visit\":\"14w\"}"
+        }
+       }
+      ],
+      "role": "assistant"
+     },
+     {
+      "role": "tool",
+      "tool_call_id": "call_02b23b65-7bbb-4d0f-8ed2-5d0b9a1f1fdd",
+      "name": "pair_stats",
+      "content": "{\"status\": \"OK\", \"patient\": \"P1\", \"from_visit\": \"10w\", \"to_visit\": \"14w\", \"treatment\": \"dasatinib on-treatment\", \"delta_raw\": 0.0443, \"delta_adj\": 0.0491, \"rcv95\": 0.0444, \"decision\": \"indeterminate_QC\", \"run_details\": {\"10w\": {\"n_runs\": 16, \"n_total\": 1836, \"mean_flow_ul_s\": 0.013281, \"mean_skip_rate\": 0.0883}, \"14w\": {\"n_runs\": 16, \"n_total\": 2363, \"mean_flow_ul_s\": 0.013281, \"mean_skip_rate\": 0.2845}}, \"sha256\": \"96d2643a85da2edcd86c7ad40338b22f6e630e19c193c54c6423555e9d9a9ffe\"}"
+     }
+    ]
+   },
+   "output": {
+    "content": "I see an indeterminate result \u2014 now I'll verify the quality data to document the reason.",
+    "refusal": null,
+    "tool_calls": [
+     {
+      "id": "call_dc70143b-63c6-463e-81b7-ee8cb40873be",
+      "type": "function",
+      "function": {
+       "name": "qc_gate",
+       "arguments": "{\"from_visit\":\"10w\",\"patient\":\"P1\",\"to_visit\":\"14w\"}"
+      }
+     }
+    ],
+    "role": "assistant"
+   },
+   "input_sha256": "cf36f16da4a3db1cdbd6c990906a2159e843fdc8d301b1328e55cba605bdc547",
+   "output_sha256": "4a1bf69523949073dbb8246d48f7da61d0d2e08196c2a6ceb5adf6822559263d",
+   "prev_sha256": "8ef203b8a11f315062ad71fe43799937b928cd5d287057275bf5607d74351bb8",
+   "entry_sha256": "0c47f5d145dcc61ade943210e11a563229995cab9ad28890823a0ec8a4a16b7e"
+  },
+  {
+   "ts": "2026-11-01T14:11:33Z",
+   "run_id": "P1_10w_14w",
+   "kind": "tool",
+   "tool": "qc_gate",
+   "input": {
+    "from_visit": "10w",
+    "patient": "P1",
+    "to_visit": "14w"
+   },
+   "output": {
+    "status": "BLOCK",
+    "patient": "P1",
+    "skip_rates": {
+     "10w": 0.0883,
+     "14w": 0.2845
+    },
+    "n_kept": {
+     "10w": 1696,
+     "14w": 1542
+    },
+    "threshold": 0.25,
+    "qc_blocked": true,
+    "reason_codes": [
+     "HIGH_SKIP_RATE"
+    ],
+    "sha256": "d1cda3f735561903a45cc29c7713c071d6c89fa32940accbb8e6e4aeceedbe00"
+   },
+   "input_sha256": "3927d4c507573fe8687c59419488489f5316764a26124deff2fd77b5ef2ede18",
+   "output_sha256": "2a74c3a923b21c2185b1e90f74ed7623b0d8303d50a70a70aae454f85fc39155",
+   "prev_sha256": "0c47f5d145dcc61ade943210e11a563229995cab9ad28890823a0ec8a4a16b7e",
+   "entry_sha256": "8308f6e3a86f4d75fafdfa987c752ff733115310cfe7a15d781e74ac190a6998"
+  },
+  {
+   "ts": "2026-11-01T14:11:35Z",
+   "run_id": "P1_10w_14w",
+   "kind": "model",
+   "input": {
+    "messages": [
+     {
+      "content": "I see an indeterminate result \u2014 now I'll verify the quality data to document the reason.",
+      "refusal": null,
+      "tool_calls": [
+       {
+        "id": "call_dc70143b-63c6-463e-81b7-ee8cb40873be",
+        "type": "function",
+        "function": {
+         "name": "qc_gate",
+         "arguments": "{\"from_visit\":\"10w\",\"patient\":\"P1\",\"to_visit\":\"14w\"}"
+        }
+       }
+      ],
+      "role": "assistant"
+     },
+     {
+      "role": "tool",
+      "tool_call_id": "call_dc70143b-63c6-463e-81b7-ee8cb40873be",
+      "name": "qc_gate",
+      "content": "{\"status\": \"BLOCK\", \"patient\": \"P1\", \"skip_rates\": {\"10w\": 0.0883, \"14w\": 0.2845}, \"n_kept\": {\"10w\": 1696, \"14w\": 1542}, \"threshold\": 0.25, \"qc_blocked\": true, \"reason_codes\": [\"HIGH_SKIP_RATE\"], \"sha256\": \"d1cda3f735561903a45cc29c7713c071d6c89fa32940accbb8e6e4aeceedbe00\"}"
+     }
+    ]
+   },
+   "output": {
+    "content": "QC blocked this comparison, so I'll sample the underlying cell data and rater summaries to complete the audit.",
+    "refusal": null,
+    "tool_calls": [
+     {
+      "id": "call_3df69d91-cb9e-458b-a08f-bdfc0db1ee58",
+      "type": "function",
+      "function": {
+       "name": "sample_cells",
+       "arguments": "{\"n\":5,\"patient\":\"P1\",\"visit\":\"10w\"}"
+      }
+     }
+    ],
+    "role": "assistant"
+   },
+   "input_sha256": "541333046feced42a7d7fa7619e2d24689582c08c8356c6668cc995a47a71f28",
+   "output_sha256": "bf5755d720ede24aeaa04eeff1f6dab1233c686bd6b8224e95b82dcc56782943",
+   "prev_sha256": "8308f6e3a86f4d75fafdfa987c752ff733115310cfe7a15d781e74ac190a6998",
+   "entry_sha256": "64c432e5833f2a5d9d0b2cf378d44122364e3fd5e49775b7899200b41b1729de"
+  },
+  {
+   "ts": "2026-11-01T14:11:35Z",
+   "run_id": "P1_10w_14w",
+   "kind": "tool",
+   "tool": "sample_cells",
+   "input": {
+    "n": 5,
+    "patient": "P1",
+    "visit": "10w"
+   },
+   "output": {
+    "status": "OK",
+    "patient": "P1",
+    "visit": "10w",
+    "cells": [
+     {
+      "cell": 0,
+      "area_mean": 578.685,
+      "circ_mean": 0.9663,
+      "axis_ratio": 1.3049,
+      "n_frames": 138
+     },
+     {
+      "cell": 5,
+      "area_mean": 430.527,
+      "circ_mean": 0.9658,
+      "axis_ratio": 1.1074,
+      "n_frames": 129
+     },
+     {
+      "cell": 44,
+      "area_mean": 473.152,
+      "circ_mean": 0.9593,
+      "axis_ratio": 1.104,
+      "n_frames": 128
+     },
+     {
+      "cell": 52,
+      "area_mean": 485.762,
+      "circ_mean": 0.9632,
+      "axis_ratio": 1.1431,
+      "n_frames": 130
+     },
+     {
+      "cell": 58,
+      "area_mean": 472.057,
+      "circ_mean": 0.9558,
+      "axis_ratio": 1.1512,
+      "n_frames": 122
+     }
+    ],
+    "sha256": "544a84e6aedd4b0eacd4262d0046e012d0341e2bba83b363a223708c918792e5"
+   },
+   "input_sha256": "573f2bca9e8d92d6f76c39b63868fd74a4677fe9df4fa9a814af5a8bb7269562",
+   "output_sha256": "771d93a4fb54d457a469c4929b50854349d9ab18dd83da3ecab4194421fec2ac",
+   "prev_sha256": "64c432e5833f2a5d9d0b2cf378d44122364e3fd5e49775b7899200b41b1729de",
+   "entry_sha256": "f87ff5f8c61d1b2c5df925e334a0a1549101925180586f915b2ad951a56a9667"
+  },
+  {
+   "ts": "2026-11-01T14:11:39Z",
+   "run_id": "P1_10w_14w",
+   "kind": "model",
+   "input": {
+    "messages": [
+     {
+      "content": "QC blocked this comparison, so I'll sample the underlying cell data and rater summaries to complete the audit.",
+      "refusal": null,
+      "tool_calls": [
+       {
+        "id": "call_3df69d91-cb9e-458b-a08f-bdfc0db1ee58",
+        "type": "function",
+        "function": {
+         "name": "sample_cells",
+         "arguments": "{\"n\":5,\"patient\":\"P1\",\"visit\":\"10w\"}"
+        }
+       }
+      ],
+      "role": "assistant"
+     },
+     {
+      "role": "tool",
+      "tool_call_id": "call_3df69d91-cb9e-458b-a08f-bdfc0db1ee58",
+      "name": "sample_cells",
+      "content": "{\"status\": \"OK\", \"patient\": \"P1\", \"visit\": \"10w\", \"cells\": [{\"cell\": 0, \"area_mean\": 578.685, \"circ_mean\": 0.9663, \"axis_ratio\": 1.3049, \"n_frames\": 138}, {\"cell\": 5, \"area_mean\": 430.527, \"circ_mean\": 0.9658, \"axis_ratio\": 1.1074, \"n_frames\": 129}, {\"cell\": 44, \"area_mean\": 473.152, \"circ_mean\": 0.9593, \"axis_ratio\": 1.104, \"n_frames\": 128}, {\"cell\": 52, \"area_mean\": 485.762, \"circ_mean\": 0.9632, \"axis_ratio\": 1.1431, \"n_frames\": 130}, {\"cell\": 58, \"area_mean\": 472.057, \"circ_mean\": 0.9558, \"axis_ratio\": 1.1512, \"n_frames\": 122}], \"sha256\": \"544a84e6aedd4b0eacd4262d0046e012d0341e2bba83b363a223708c918792e5\"}"
+     }
+    ]
+   },
+   "output": {
+    "content": "I've reviewed one visit's sample \u2014 now gathering the remaining context to finalize the report.",
+    "refusal": null,
+    "tool_calls": [
+     {
+      "id": "call_f20ec4db-6905-427e-b696-a169c6f7aaf7",
+      "type": "function",
+      "function": {
+       "name": "rater_summary",
+       "arguments": "{\"patient\":\"P1\",\"visit\":\"10w\"}"
+      }
+     }
+    ],
+    "role": "assistant"
+   },
+   "input_sha256": "067ee712d68f6ddaed08d1f46c0c6df1befae7462cab279c440085fa71c9a0c5",
+   "output_sha256": "d52a25cc98fa86abc9cf23ecbc2787de69690727056676dc4529a3f223e155f0",
+   "prev_sha256": "f87ff5f8c61d1b2c5df925e334a0a1549101925180586f915b2ad951a56a9667",
+   "entry_sha256": "7db28e8eaa4dd982e7eaa391336e7500382215a350fc34c325e8b2d18ba9baee"
+  },
+  {
+   "ts": "2026-11-01T14:11:39Z",
+   "run_id": "P1_10w_14w",
+   "kind": "tool",
+   "tool": "rater_summary",
+   "input": {
+    "patient": "P1",
+    "visit": "10w"
+   },
+   "output": {
+    "status": "OK",
+    "patient": "P1",
+    "visit": "10w",
+    "spark_1_3": {
+     "n": 3,
+     "counts": {
+      "yes": 0,
+      "no": 0,
+      "cannot_tell": 3
+     },
+     "cannot_tell_share": 1.0
+    },
+    "open_weight": {
+     "n": 3,
+     "counts": {
+      "yes": 2,
+      "no": 0,
+      "cannot_tell": 1
+     },
+     "cannot_tell_share": 0.333
+    },
+    "sha256": "1636849279e4d60e14393ff906a087c6cd3f06cdba8809257b27d3c0c4fc181d"
+   },
+   "input_sha256": "1da1e0b2ab7d1b4812979eaa13f68b6a0d68eab659d195369a55c59c4c23e540",
+   "output_sha256": "31b06d21f35224806d09a8c5d384b548cd2e429f545a64301bfb706e726cf9ea",
+   "prev_sha256": "7db28e8eaa4dd982e7eaa391336e7500382215a350fc34c325e8b2d18ba9baee",
+   "entry_sha256": "ac01c64caa50aba98a69a5a05d691497277da86d9a16d7fab99f0928bee2ad8f"
+  },
+  {
+   "ts": "2026-11-01T14:11:47Z",
+   "run_id": "P1_10w_14w",
+   "kind": "model",
+   "input": {
+    "messages": [
+     {
+      "content": "I've reviewed one visit's sample \u2014 now gathering the remaining context to finalize the report.",
+      "refusal": null,
+      "tool_calls": [
+       {
+        "id": "call_f20ec4db-6905-427e-b696-a169c6f7aaf7",
+        "type": "function",
+        "function": {
+         "name": "rater_summary",
+         "arguments": "{\"patient\":\"P1\",\"visit\":\"10w\"}"
+        }
+       }
+      ],
+      "role": "assistant"
+     },
+     {
+      "role": "tool",
+      "tool_call_id": "call_f20ec4db-6905-427e-b696-a169c6f7aaf7",
+      "name": "rater_summary",
+      "content": "{\"status\": \"OK\", \"patient\": \"P1\", \"visit\": \"10w\", \"spark_1_3\": {\"n\": 3, \"counts\": {\"yes\": 0, \"no\": 0, \"cannot_tell\": 3}, \"cannot_tell_share\": 1.0}, \"open_weight\": {\"n\": 3, \"counts\": {\"yes\": 2, \"no\": 0, \"cannot_tell\": 1}, \"cannot_tell_share\": 0.333}, \"sha256\": \"1636849279e4d60e14393ff906a087c6cd3f06cdba8809257b27d3c0c4fc181d\"}"
+     }
+    ]
+   },
+   "output": {
+    "content": null,
+    "refusal": null,
+    "tool_calls": [
+     {
+      "id": "call_f39f2d9d-fa5d-4584-8e1a-0b3689184129",
+      "type": "function",
+      "function": {
+       "name": "sample_cells",
+       "arguments": "{\"n\":5,\"patient\":\"P1\",\"visit\":\"14w\"}"
+      }
+     }
+    ],
+    "role": "assistant"
+   },
+   "input_sha256": "4bb12430786b18f629871a9abdd3268c3f6f6fac3bbc966346aa157bf2766da8",
+   "output_sha256": "ff988d31d64875abaed713e89233dd5498bf40855938201cd77cc7f0cdbc7bb1",
+   "prev_sha256": "ac01c64caa50aba98a69a5a05d691497277da86d9a16d7fab99f0928bee2ad8f",
+   "entry_sha256": "1eb4f3aff78bac5f37f0c6360228810c474d510076e456f46e34ef80c2cc56cf"
+  },
+  {
+   "ts": "2026-11-01T14:11:47Z",
+   "run_id": "P1_10w_14w",
+   "kind": "tool",
+   "tool": "sample_cells",
+   "input": {
+    "n": 5,
+    "patient": "P1",
+    "visit": "14w"
+   },
+   "output": {
+    "status": "OK",
+    "patient": "P1",
+    "visit": "14w",
+    "cells": [
+     {
+      "cell": 68,
+      "area_mean": 445.523,
+      "circ_mean": 0.9754,
+      "axis_ratio": 1.0021,
+      "n_frames": 133
+     },
+     {
+      "cell": 82,
+      "area_mean": 412.56,
+      "circ_mean": 0.956,
+      "axis_ratio": 1.3999,
+      "n_frames": 124
+     },
+     {
+      "cell": 96,
+      "area_mean": 508.605,
+      "circ_mean": 0.97,
+      "axis_ratio": 1.172,
+      "n_frames": 124
+     },
+     {
+      "cell": 135,
+      "area_mean": 459.844,
+      "circ_mean": 0.963,
+      "axis_ratio": 0.9984,
+      "n_frames": 48
+     },
+     {
+      "cell": 147,
+      "area_mean": 511.606,
+      "circ_mean": 0.9635,
+      "axis_ratio": 1.0736,
+      "n_frames": 127
+     }
+    ],
+    "sha256": "39c6d0ead75119bcb5edfa45d0b5fdc401f2fbc2b54210acb26600f3916e62db"
+   },
+   "input_sha256": "fc2e0be0033143afd8425bfd66be43908ab9b77231c0febf6b17ca084da5361b",
+   "output_sha256": "5a9ec85da77958fe92c4f0655e98f9e7ad9ff8d9cd44275ebd87fdb21a391c72",
+   "prev_sha256": "1eb4f3aff78bac5f37f0c6360228810c474d510076e456f46e34ef80c2cc56cf",
+   "entry_sha256": "64c861eb2911f00fb575912ea2a37abfe7276a0029aeeb7d6fb540150b5922d0"
+  },
+  {
+   "ts": "2026-11-01T14:11:48Z",
+   "run_id": "P1_10w_14w",
+   "kind": "model",
+   "input": {
+    "messages": [
+     {
+      "content": null,
+      "refusal": null,
+      "tool_calls": [
+       {
+        "id": "call_f39f2d9d-fa5d-4584-8e1a-0b3689184129",
+        "type": "function",
+        "function": {
+         "name": "sample_cells",
+         "arguments": "{\"n\":5,\"patient\":\"P1\",\"visit\":\"14w\"}"
+        }
+       }
+      ],
+      "role": "assistant"
+     },
+     {
+      "role": "tool",
+      "tool_call_id": "call_f39f2d9d-fa5d-4584-8e1a-0b3689184129",
+      "name": "sample_cells",
+      "content": "{\"status\": \"OK\", \"patient\": \"P1\", \"visit\": \"14w\", \"cells\": [{\"cell\": 68, \"area_mean\": 445.523, \"circ_mean\": 0.9754, \"axis_ratio\": 1.0021, \"n_frames\": 133}, {\"cell\": 82, \"area_mean\": 412.56, \"circ_mean\": 0.956, \"axis_ratio\": 1.3999, \"n_frames\": 124}, {\"cell\": 96, \"area_mean\": 508.605, \"circ_mean\": 0.97, \"axis_ratio\": 1.172, \"n_frames\": 124}, {\"cell\": 135, \"area_mean\": 459.844, \"circ_mean\": 0.963, \"axis_ratio\": 0.9984, \"n_frames\": 48}, {\"cell\": 147, \"area_mean\": 511.606, \"circ_mean\": 0.9635, \"axis_ratio\": 1.0736, \"n_frames\": 127}], \"sha256\": \"39c6d0ead75119bcb5edfa45d0b5fdc401f2fbc2b54210acb26600f3916e62db\"}"
+     }
+    ]
+   },
+   "output": {
+    "content": null,
+    "refusal": null,
+    "tool_calls": [
+     {
+      "id": "call_271f83f7-93d9-442e-baa1-797e534c8127",
+      "type": "function",
+      "function": {
+       "name": "rater_summary",
+       "arguments": "{\"patient\":\"P1\",\"visit\":\"14w\"}"
+      }
+     }
+    ],
+    "role": "assistant"
+   },
+   "input_sha256": "6071f20d703c748fb989ae0a563a437cbb2cf23caf70b325f9c0a2683c986620",
+   "output_sha256": "e16876439d183910e436fdb1e88f3964814c0f991e0ba6441382782151d38373",
+   "prev_sha256": "64c861eb2911f00fb575912ea2a37abfe7276a0029aeeb7d6fb540150b5922d0",
+   "entry_sha256": "99fe31d41909df7b6f93735153906eb3986d8f9c69afa4812f70f357e8dee7e0"
+  },
+  {
+   "ts": "2026-11-01T14:11:48Z",
+   "run_id": "P1_10w_14w",
+   "kind": "tool",
+   "tool": "rater_summary",
+   "input": {
+    "patient": "P1",
+    "visit": "14w"
+   },
+   "output": {
+    "status": "OK",
+    "patient": "P1",
+    "visit": "14w",
+    "spark_1_3": {
+     "n": 0,
+     "counts": {
+      "yes": 0,
+      "no": 0,
+      "cannot_tell": 0
+     },
+     "cannot_tell_share": null
+    },
+    "open_weight": {
+     "n": 0,
+     "counts": {
+      "yes": 0,
+      "no": 0,
+      "cannot_tell": 0
+     },
+     "cannot_tell_share": null
+    },
+    "sha256": "98a914b79ec1f1ccc86473483f65b453ebeeb6d868e4ab5b6f7d705e7971f44f"
+   },
+   "input_sha256": "d9e76fd12148e0d7f1522271def84d92827e9c443f345e58ea1ca143c41854fb",
+   "output_sha256": "3f91009734ecdebff9e09b899315b22808ba40b362f755add90e075705f5c192",
+   "prev_sha256": "99fe31d41909df7b6f93735153906eb3986d8f9c69afa4812f70f357e8dee7e0",
+   "entry_sha256": "0163b0e6bfada0909ffea6cda6ee7ce0e1f45f91deac032ba0b622e0dbbfe37a"
+  },
+  {
+   "ts": "2026-11-01T14:12:00Z",
+   "run_id": "P1_10w_14w",
+   "kind": "model",
+   "input": {
+    "messages": [
+     {
+      "content": null,
+      "refusal": null,
+      "tool_calls": [
+       {
+        "id": "call_271f83f7-93d9-442e-baa1-797e534c8127",
+        "type": "function",
+        "function": {
+         "name": "rater_summary",
+         "arguments": "{\"patient\":\"P1\",\"visit\":\"14w\"}"
+        }
+       }
+      ],
+      "role": "assistant"
+     },
+     {
+      "role": "tool",
+      "tool_call_id": "call_271f83f7-93d9-442e-baa1-797e534c8127",
+      "name": "rater_summary",
+      "content": "{\"status\": \"OK\", \"patient\": \"P1\", \"visit\": \"14w\", \"spark_1_3\": {\"n\": 0, \"counts\": {\"yes\": 0, \"no\": 0, \"cannot_tell\": 0}, \"cannot_tell_share\": null}, \"open_weight\": {\"n\": 0, \"counts\": {\"yes\": 0, \"no\": 0, \"cannot_tell\": 0}, \"cannot_tell_share\": null}, \"sha256\": \"98a914b79ec1f1ccc86473483f65b453ebeeb6d868e4ab5b6f7d705e7971f44f\"}"
+     }
+    ]
+   },
+   "output": {
+    "content": "I've gathered all the supporting evidence \u2014 now I'll produce the signed audit report.",
+    "refusal": null,
+    "tool_calls": [
+     {
+      "id": "call_5c3c7d57-83b1-420c-bb08-92701e5a81b9",
+      "type": "function",
+      "function": {
+       "name": "render_and_sign",
+       "arguments": "{\"from_visit\":\"10w\",\"narrative\":\"Audit review finds quality gate blocked comparison due to elevated skip rate at later visit above threshold, yielding indeterminate status with lack of decision basis. Sampled cell metrics were inspected merely for context and rater summaries were reviewed showing uncertain coverage at earlier visit with absent coverage at later visit, supporting lack of reliable basis for change assessment. No clinical guidance is offered.\",\"patient\":\"P1\",\"to_visit\":\"14w\"}"
+      }
+     }
+    ],
+    "role": "assistant"
+   },
+   "input_sha256": "02caa8656d5dcffc2e4dafb756e483d55361f0f993da3637fea49586701676e7",
+   "output_sha256": "451d51998abf5e1bd7b0611793309b4c2a7c9dfbf1c244ee6276175d8a494ce7",
+   "prev_sha256": "0163b0e6bfada0909ffea6cda6ee7ce0e1f45f91deac032ba0b622e0dbbfe37a",
+   "entry_sha256": "2c5cc50b1bf47b402b00cee05c815fd01363a619bf2ff96ec072f27089c99e29"
+  },
+  {
+   "ts": "2026-11-01T14:12:00Z",
+   "run_id": "P1_10w_14w",
+   "kind": "tool",
+   "tool": "render_and_sign",
+   "input": {
+    "from_visit": "10w",
+    "narrative": "Audit review finds quality gate blocked comparison due to elevated skip rate at later visit above threshold, yielding indeterminate status with lack of decision basis. Sampled cell metrics were inspected merely for context and rater summaries were reviewed showing uncertain coverage at earlier visit with absent coverage at later visit, supporting lack of reliable basis for change assessment. No clinical guidance is offered.",
+    "patient": "P1",
+    "to_visit": "14w"
+   },
+   "output": {
+    "status": "PASS",
+    "final_status": "AWAITING_SIGNOFF",
+    "patient": "P1",
+    "from_visit": "10w",
+    "to_visit": "14w",
+    "report": "# HelpChoreAI Audit Report (research use)\nDataset: Figshare Collection doi:10.6084/m9.figshare.c.5793482 (CC BY 4.0, Reichel et al. 2022)\nPatient code: P1 | Visits: 10w -> 14w | Treatment context: dasatinib on-treatment\nMeasurand: health==1 fraction among shape!=0, flow-standardized at reference flow 0.016 uL/s\nChange (raw): +0.0443 | Change (flow-adjusted): +0.0491 | RCV95 band: 0.0444\nDecision: indeterminate_QC\nChecker payload SHA-256: 7eb0fe2fa7fb21383631f3853804a6fa762b357a064dd4d1beabe52ef15a3358\nDisclaimer: Research use only. RBC morphology is a peripheral target-engagement marker, not a measure of central nervous system progression. Every result must be reviewed by a qualified researcher using the per-cell visual overlay.\nNarrative: Audit review finds quality gate blocked comparison due to elevated skip rate at later visit above threshold, yielding indeterminate status with lack of decision basis. Sampled cell metrics were inspected merely for context and rater summaries were reviewed showing uncertain coverage at earlier visit with absent coverage at later visit, supporting lack of reliable basis for change assessment. No clinical guidance is offered.",
+    "decision": "indeterminate_QC",
+    "reason_codes": [
+     "HIGH_SKIP_RATE"
+    ],
+    "report_sha256": "6b8679d460ffeeb54fbf960d80cbaa0c253f1ecc6639836b609e15f53b7e6610",
+    "envelope": {
+     "payload": {
+      "dataset_doi": "10.6084/m9.figshare.c.5793482",
+      "patient": "P1",
+      "from_visit": "10w",
+      "to_visit": "14w",
+      "treatment": "dasatinib on-treatment",
+      "delta_raw": 0.0443,
+      "delta_adj": 0.0491,
+      "rcv95": 0.0444,
+      "decision": "indeterminate_QC",
+      "ref_flow_ul_s": 0.016,
+      "measurand": "health==1 fraction among shape!=0, flow-standardized",
+      "disclaimer": "Research use only. RBC morphology is a peripheral target-engagement marker, not a measure of central nervous system progression. Every result must be reviewed by a qualified researcher using the per-cell visual overlay.",
+      "chain": {
+       "raw_manifest_sha256": "1cfe3d4ace57c8bf2f7fb0387da37454b59a7b9e5d0d612a8239bf3454c5639b",
+       "tables_sha256": {
+        "per_run.csv": "08048a68a15d7ffb94001917830492e8566430c810566449520c6ffee811e9ea",
+        "per_visit_adjusted_v3.csv": "2db19526fadac2908964e7c6244c054f932671d53e08691bf41221b578f48e9e",
+        "visit_pairs_decisions_v3.csv": "b07d04a8f62f5d66b8f24766684c0884d59368a5e068ae5f3594aa9bf8303f52"
+       },
+       "hashed_files": [
+        "data/fetch_manifest/dev_P1_entries.json",
+        "data/fetch_manifest/dev_P2_entries.json",
+        "data/fetch_manifest/dev_P4_entries.json",
+        "data/fetch_manifest/fetch_log.json",
+        "data/fetch_manifest/figshare_articles.json",
+        "data/fetch_manifest/figshare_files.json",
+        "data/fetch_manifest/p1_avi_entries.json",
+        "data/tables/per_run.csv",
+        "data/tables/per_visit_adjusted_v3.csv",
+        "data/tables/visit_pairs_decisions_v3.csv"
+       ]
+      },
+      "payload_sha256": "7eb0fe2fa7fb21383631f3853804a6fa762b357a064dd4d1beabe52ef15a3358",
+      "report_sha256": "6b8679d460ffeeb54fbf960d80cbaa0c253f1ecc6639836b609e15f53b7e6610"
+     },
+     "signature_hex": "b9b0c70f7ac58711777768441ad41098496d6b1d4ffd76a658b6702f50c8eb66c07bbce5b91f60805918dfd72210a2e1f463fa5ac4c2b747aa7374ef464d830a",
+     "public_key_hex": "0f7fe36f836cc72b67a6b573a11d2684b4db3a2221df11341151824e600ea072"
+    },
+    "sha256": "51e8ecc07b9f55db297b97119b1fb6b3a060ac931ad45d994f06bc36333cd94b"
+   },
+   "input_sha256": "221ba5ae972e37053623ce07f6e147864d7007a04b00ef3506ea1893ab988be6",
+   "output_sha256": "f82278e47f19323ad20e87ea9a9856aba5a32180436085a18ac652a0a12d9314",
+   "prev_sha256": "2c5cc50b1bf47b402b00cee05c815fd01363a619bf2ff96ec072f27089c99e29",
+   "entry_sha256": "b6ef9c75c5baa5a04949dfa1fd0f7419593e56268c383a652cd4a0228fd71d89"
+  },
+  {
+   "ts": "2026-11-01T14:12:00Z",
+   "run_id": "P1_10w_14w",
+   "kind": "final",
+   "input": {
+    "patient": "P1",
+    "from_visit": "10w",
+    "to_visit": "14w"
+   },
+   "output": {
+    "status": "AWAITING_SIGNOFF",
+    "report_sha256": "6b8679d460ffeeb54fbf960d80cbaa0c253f1ecc6639836b609e15f53b7e6610",
+    "run_id": "P1_10w_14w",
+    "patient": "P1",
+    "from_visit": "10w",
+    "to_visit": "14w",
+    "tool_calls": 8,
+    "rejections": 0,
+    "refusals": 0,
+    "tools_used": [
+     "list_pairs",
+     "pair_stats",
+     "qc_gate",
+     "sample_cells",
+     "rater_summary",
+     "sample_cells",
+     "rater_summary",
+     "render_and_sign"
+    ]
+   },
+   "input_sha256": "3927d4c507573fe8687c59419488489f5316764a26124deff2fd77b5ef2ede18",
+   "output_sha256": "d8da2312ba2520ca649d645b2e0005bffb54ff9cfaa58180d7adb0471dacead6",
+   "prev_sha256": "b6ef9c75c5baa5a04949dfa1fd0f7419593e56268c383a652cd4a0228fd71d89",
+   "entry_sha256": "b7e43067a374f003e2af312bc12727bd8503ec580d4d9f2a1f9a426cf6790206"
+  }
+ ]
+}

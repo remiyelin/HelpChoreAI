@@ -1,0 +1,219 @@
+{
+ "results": [
+  {
+   "run_id": "P1_10w_14w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 8,
+   "rejections": 0,
+   "refusals": 0,
+   "tools_used": [
+    "list_pairs",
+    "pair_stats",
+    "qc_gate",
+    "sample_cells",
+    "rater_summary",
+    "sample_cells",
+    "rater_summary",
+    "render_and_sign"
+   ]
+  },
+  {
+   "run_id": "P1_14w_20w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 8,
+   "rejections": 0,
+   "refusals": 0,
+   "tools_used": [
+    "list_pairs",
+    "pair_stats",
+    "qc_gate",
+    "sample_cells",
+    "rater_summary",
+    "sample_cells",
+    "rater_summary",
+    "render_and_sign"
+   ]
+  },
+  {
+   "run_id": "P1_20w_24w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 8,
+   "rejections": 0,
+   "refusals": 1,
+   "tools_used": [
+    "list_pairs",
+    "pair_stats",
+    "qc_gate",
+    "sample_cells",
+    "rater_summary",
+    "rater_summary",
+    "render_and_sign",
+    "render_and_sign"
+   ]
+  },
+  {
+   "run_id": "P1_24w_29w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 7,
+   "rejections": 0,
+   "refusals": 0,
+   "tools_used": [
+    "list_pairs",
+    "pair_stats",
+    "qc_gate",
+    "sample_cells",
+    "rater_summary",
+    "rater_summary",
+    "render_and_sign"
+   ]
+  },
+  {
+   "run_id": "P1_29w_53w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 7,
+   "rejections": 0,
+   "refusals": 0,
+   "tools_used": [
+    "list_pairs",
+    "pair_stats",
+    "qc_gate",
+    "sample_cells",
+    "rater_summary",
+    "rater_summary",
+    "render_and_sign"
+   ]
+  },
+  {
+   "run_id": "P2_18w_22w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 8,
+   "rejections": 0,
+   "refusals": 1,
+   "tools_used": [
+    "list_pairs",
+    "pair_stats",
+    "qc_gate",
+    "sample_cells",
+    "rater_summary",
+    "rater_summary",
+    "render_and_sign",
+    "render_and_sign"
+   ]
+  },
+  {
+   "run_id": "P2_22w_27w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 7,
+   "rejections": 0,
+   "refusals": 0,
+   "tools_used": [
+    "list_pairs",
+    "pair_stats",
+    "qc_gate",
+    "sample_cells",
+    "rater_summary",
+    "rater_summary",
+    "render_and_sign"
+   ]
+  },
+  {
+   "run_id": "P2_27w_51w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 8,
+   "rejections": 0,
+   "refusals": 0,
+   "tools_used": [
+    "list_pairs",
+    "pair_stats",
+    "qc_gate",
+    "sample_cells",
+    "rater_summary",
+    "sample_cells",
+    "rater_summary",
+    "render_and_sign"
+   ]
+  },
+  {
+   "run_id": "P1_0w_2w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 4,
+   "rejections": 0,
+   "refusals": 0,
+   "tools_used": [
+    "list_pairs",
+    "pair_stats",
+    "qc_gate",
+    "render_and_sign"
+   ]
+  },
+  {
+   "run_id": "P1_2w_4w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 4,
+   "rejections": 0,
+   "refusals": 0,
+   "tools_used": [
+    "list_pairs",
+    "pair_stats",
+    "qc_gate",
+    "render_and_sign"
+   ]
+  },
+  {
+   "run_id": "P1_4w_6w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 4,
+   "rejections": 0,
+   "refusals": 0,
+   "tools_used": [
+    "list_pairs",
+    "pair_stats",
+    "qc_gate",
+    "render_and_sign"
+   ]
+  },
+  {
+   "run_id": "P1_6w_8w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 4,
+   "rejections": 0,
+   "refusals": 0,
+   "tools_used": [
+    "list_pairs",
+    "pair_stats",
+    "qc_gate",
+    "render_and_sign"
+   ]
+  },
+  {
+   "run_id": "P1_8w_10w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 4,
+   "rejections": 0,
+   "refusals": 0,
+   "tools_used": [
+    "list_pairs",
+    "pair_stats",
+    "qc_gate",
+    "render_and_sign"
+   ]
+  },
+  {
+   "run_id": "P2_0w_2w",
+   "status": "AWAITING_SIGNOFF",
+   "tool_calls": 4,
+   "rejections": 0,
+   "refusals": 0,
+   "tools_used": [
+    "list_pairs",
+    "pair_stats",
+    "qc_gate",
+    "render_and_sign"
+   ]
+  }
+ ],
+ "ledger": {
+  "spent_usd": 3.0,
+  "model_calls": 150
+ }
+}

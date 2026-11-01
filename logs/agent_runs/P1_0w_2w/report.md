@@ -6,4 +6,4 @@ Change (raw): +0.1570 | Change (flow-adjusted): +0.1541 | RCV95 band: 0.0416
 Decision: exceeds_RCV
 Checker payload SHA-256: 148dc82fb3d412c1bb92d13c0ca244456d887e4c504308ff3cb02adc28be7d9b
 Disclaimer: Research use only. RBC morphology is a peripheral target-engagement marker, not a measure of central nervous system progression. Every result must be reviewed by a qualified researcher using the per-cell visual overlay.
-Narrative: Flow standardized change assessed against the combined noise band.
+Narrative: Audit of baseline to follow-up visit pair confirms quality gate clearance with skip behavior within acceptable bounds across runs. Adjusted change exceeds reference change threshold, supporting decision recorded in decision row. Run metadata and flow characteristics appear consistent across visits, with quality block absent and concern codes absent.

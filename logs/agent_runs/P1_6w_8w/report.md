@@ -6,4 +6,4 @@ Change (raw): -0.0510 | Change (flow-adjusted): +0.0035 | RCV95 band: 0.0546
 Decision: within_RCV
 Checker payload SHA-256: e26d5c3f64187dc1fb4244d3c311285d30feceda500abca3a48b822cf0db62fe
 Disclaimer: Research use only. RBC morphology is a peripheral target-engagement marker, not a measure of central nervous system progression. Every result must be reviewed by a qualified researcher using the per-cell visual overlay.
-Narrative: Flow comparison remained stable within expected variability while quality checks passed.
+Narrative: Audit reviewed specified visits during on-treatment period with quality gate passing on skip criteria and retained runs supporting comparison. Adjusted change remained inside reference change threshold, consistent with stable signal and reported decision.

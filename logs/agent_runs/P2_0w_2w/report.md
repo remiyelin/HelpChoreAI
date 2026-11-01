@@ -6,4 +6,4 @@ Change (raw): +0.0328 | Change (flow-adjusted): +0.0392 | RCV95 band: 0.0339
 Decision: exceeds_RCV
 Checker payload SHA-256: 850eda3eec8550f8d38f7fde9a9d15c7596913dd3ac8cbbbbf135524661ccdad
 Disclaimer: Research use only. RBC morphology is a peripheral target-engagement marker, not a measure of central nervous system progression. Every result must be reviewed by a qualified researcher using the per-cell visual overlay.
-Narrative: Dasatinib initiation shows increase exceeding variability with quality control passing.
+Narrative: Audit review of baseline to early follow-up visit pair shows quality control gate passed with skip rates below threshold, adjusted change exceeded reference change value, supporting decision of exceeds reference change value under dasatinib initiation context.

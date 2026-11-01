@@ -47,13 +47,17 @@ def test_planted_unverified_number_rejected(tmp_path, monkeypatch):
     _tmp_signing_key(monkeypatch, tmp_path)
     mock = _scripted([
         _call("pair_stats", patient="P1", from_visit="0w", to_visit="2w"),
+        _call("qc_gate", patient="P1", from_visit="0w", to_visit="2w"),
         _call("render_and_sign", patient="P1", from_visit="0w", to_visit="2w",
               narrative="The fraction rose by 42 percent since baseline."),
         _call("render_and_sign", patient="P1", from_visit="0w", to_visit="2w",
               narrative="Flow standardized change assessed against the combined noise band."),
     ])
     res = agent.run_pair("P1", "0w", "2w", model_fn=mock)
-    assert res["status"] == "AWAITING_SIGNOFF" and res["rejections"] == 1 and res["tool_calls"] == 3
+    assert res["status"] == "AWAITING_SIGNOFF" and res["rejections"] == 1 and res["tool_calls"] == 4
+    agent_tools.begin_run("direct")
+    agent_tools.call_tool("pair_stats", {"patient": "P1", "from_visit": "0w", "to_visit": "2w"})
+    agent_tools.call_tool("qc_gate", {"patient": "P1", "from_visit": "0w", "to_visit": "2w"})
     direct = agent_tools.render_and_sign("P1", "0w", "2w", "An increase of ninety nine units was seen.")
     assert direct["status"] == "REJECTED_UNVERIFIED_NUMBER" and "42" not in direct["feedback"]
 
@@ -64,7 +68,9 @@ def test_three_rejections_need_human(tmp_path, monkeypatch):
     bad = _call("render_and_sign", patient="P1", from_visit="0w", to_visit="2w",
                 narrative="The fraction rose by 42 percent since baseline.")
     res = agent.run_pair("P1", "0w", "2w", model_fn=_scripted([bad]))
-    assert res["status"] == "NEEDS_HUMAN" and res["rejections"] == 3
+    assert res["status"] == "NEEDS_HUMAN" and res["refusals"] == 3
+    trail = (tmp_path / "trail.jsonl").read_text()
+    assert "refusal ladder" in trail and '"kind": "refusal"' in trail
 
 
 def test_verify_run_with_no_private_key(tmp_path, monkeypatch, capsys):
@@ -116,6 +122,7 @@ def test_verify_cli_reruns_checks(tmp_path, monkeypatch, capsys):
     _tmp_signing_key(monkeypatch, tmp_path)
     mock = _scripted([
         _call("pair_stats", patient="P1", from_visit="0w", to_visit="2w"),
+        _call("qc_gate", patient="P1", from_visit="0w", to_visit="2w"),
         _call("render_and_sign", patient="P1", from_visit="0w", to_visit="2w",
               narrative="Flow standardized change assessed against the combined noise band."),
     ])
@@ -123,3 +130,93 @@ def test_verify_cli_reruns_checks(tmp_path, monkeypatch, capsys):
     assert res["status"] == "AWAITING_SIGNOFF"
     assert agent.main(["verify", res["run_id"]]) == 0
     assert "VERIFIED" in capsys.readouterr().out
+
+
+def _setup_run(tmp_path, monkeypatch):
+    monkeypatch.setenv("HELPCHORE_AGENT_TRAIL", str(tmp_path / "trail.jsonl"))
+    monkeypatch.setattr(agent, "LOGS", tmp_path)
+    _tmp_signing_key(monkeypatch, tmp_path)
+
+
+def _stats_qc(patient="P1", frm="0w", to="2w"):
+    return [_call("pair_stats", patient=patient, from_visit=frm, to_visit=to),
+            _call("qc_gate", patient=patient, from_visit=frm, to_visit=to)]
+
+
+def test_planted_render_without_prerequisites_refused(tmp_path, monkeypatch):
+    _setup_run(tmp_path, monkeypatch)
+    mock = _scripted([_call("render_and_sign", patient="P1", from_visit="0w", to_visit="2w",
+                            narrative="Flow standardized change assessed against the combined noise band.")])
+    res = agent.run_pair("P1", "0w", "2w", model_fn=mock)
+    assert res["status"] == "NEEDS_HUMAN" and res["refusals"] == 3
+    assert "REFUSED_MISSING_PREREQUISITES" in (tmp_path / "trail.jsonl").read_text()
+
+
+def test_planted_digit_narrative_refused(tmp_path, monkeypatch):
+    _setup_run(tmp_path, monkeypatch)
+    mock = _scripted(_stats_qc() + [_call("render_and_sign", patient="P1", from_visit="0w", to_visit="2w",
+                                          narrative="The fraction rose by 7 units since baseline.")])
+    res = agent.run_pair("P1", "0w", "2w", model_fn=mock)
+    assert res["status"] == "NEEDS_HUMAN" and res["refusals"] == 3
+
+
+def test_planted_paraphrased_clinical_advice_refused(tmp_path, monkeypatch):
+    _setup_run(tmp_path, monkeypatch)
+    mock = _scripted(_stats_qc() + [_call("render_and_sign", patient="P1", from_visit="0w", to_visit="2w",
+                                          narrative="The patient is doing better on the current therapy and the dose seems right.")])
+    res = agent.run_pair("P1", "0w", "2w", model_fn=mock)
+    assert res["status"] == "NEEDS_HUMAN" and res["refusals"] == 3
+    assert "REFUSED_CLINICAL_ADVICE" in (tmp_path / "trail.jsonl").read_text()
+
+
+def test_planted_qc_blocked_pair_written_as_change_refused(tmp_path, monkeypatch):
+    _setup_run(tmp_path, monkeypatch)
+    mock = _scripted(_stats_qc("P1", "10w", "14w") + [
+        _call("render_and_sign", patient="P1", from_visit="10w", to_visit="14w",
+              narrative="A real change exceeds the combined noise band.")])
+    res = agent.run_pair("P1", "10w", "14w", model_fn=mock)
+    assert res["status"] == "NEEDS_HUMAN" and res["refusals"] == 3
+    assert "REFUSED_QC_NO_DECISION" in (tmp_path / "trail.jsonl").read_text()
+    # A compliant inspection path signs a no-decision report instead.
+    mock2 = _scripted(_stats_qc("P1", "10w", "14w") + [
+        _call("sample_cells", patient="P1", visit="10w", n=3),
+        _call("rater_summary", patient="P1", visit="10w"),
+        _call("render_and_sign", patient="P1", from_visit="10w", to_visit="14w",
+              narrative="No decision can be made for this pair because the high skip rate blocked the quality gate.")])
+    res2 = agent.run_pair("P1", "10w", "14w", model_fn=mock2)
+    assert res2["status"] == "AWAITING_SIGNOFF" and "sample_cells" in res2["tools_used"]
+
+
+def test_planted_wrong_patient_refused(tmp_path, monkeypatch):
+    _setup_run(tmp_path, monkeypatch)
+    mock = _scripted([_call("render_and_sign", patient="P9", from_visit="0w", to_visit="2w",
+                            narrative="Flow standardized change assessed against the combined noise band.")])
+    res = agent.run_pair("P1", "0w", "2w", model_fn=mock)
+    assert res["status"] == "NEEDS_HUMAN" and res["refusals"] == 3
+    assert "REFUSED_UNKNOWN_PATIENT" in (tmp_path / "trail.jsonl").read_text()
+
+
+def test_planted_table_hash_mismatch_refused(tmp_path, monkeypatch):
+    # Plant: the envelope is signed with a chain computed from tampered
+    # tables; verification against the tracked files must reject it.
+    _setup_run(tmp_path, monkeypatch)
+    real_chain = checker.chain_hashes()
+    state = {"calls": 0}
+
+    def foreign_then_real():
+        state["calls"] += 1
+        if state["calls"] == 1:
+            bad = json.loads(json.dumps(real_chain))
+            bad["tables_sha256"]["per_visit_adjusted_v3.csv"] = "0" * 64
+            return bad
+        return real_chain
+
+    monkeypatch.setattr(checker, "chain_hashes", foreign_then_real)
+    mock = _scripted(_stats_qc() + [_call("render_and_sign", patient="P1", from_visit="0w", to_visit="2w",
+                                          narrative="Flow standardized change assessed against the combined noise band.")])
+    res = agent.run_pair("P1", "0w", "2w", model_fn=mock)
+    # The foreign-chain render is refused; a later clean render may sign, but
+    # the tampered envelope never does.
+    assert res["refusals"] >= 1
+    trail = (tmp_path / "trail.jsonl").read_text()
+    assert "REJECTED_UNVERIFIED_NUMBER" in trail

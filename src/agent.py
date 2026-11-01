@@ -42,10 +42,13 @@ TOOL_SCHEMAS = [{"type": "function", "function": {"name": n, "description": d, "
       "required": ["patient", "from_visit", "to_visit", "narrative"]}),
 ]]
 
-SYSTEM = ("You are a research audit agent. Use the tools to audit exactly one visit pair, then call "
-          "render_and_sign with one short narrative sentence. The narrative must contain no digits and "
-          "no spelled-out numbers and no percent words; all numbers are templated by the tool. "
-          "Never invent numbers. If a tool rejects your narrative, rewrite it without numbers and retry.")
+SYSTEM = ("You are a research audit agent. Your goal is to audit exactly one visit pair and produce "
+          "a signed audit report, or a signed report that explains why no decision can be made. "
+          "Rules: every number must come from a tool output; your narrative must contain no digits, "
+          "no spelled-out numbers and no percent words; never invent numbers or clinical advice. "
+          "Tools may refuse a call and tell you why; read the refusal and adapt. When a pair has no "
+          "decision, you may inspect sampled cells and rater summaries, and the narrative must state "
+          "why there is no decision.")
 
 
 def trail_path() -> Path:
@@ -114,9 +117,12 @@ def _spark_tools_chat(messages, ledger=None):
 def run_pair(patient, from_visit, to_visit, model_fn=None, ledger=None, max_tool_calls=MAX_TOOL_CALLS):
     run_id = f"{patient}_{from_visit}_{to_visit}"
     chat = model_fn or (lambda msgs: _spark_tools_chat(msgs, ledger))
+    agent_tools.begin_run(run_id)
     messages = [{"role": "system", "content": SYSTEM},
-                {"role": "user", "content": f"Audit pair {patient} {from_visit} -> {to_visit}. Call pair_stats and qc_gate first, then render_and_sign."}]
-    tool_calls, rejections, final = 0, 0, None
+                {"role": "user", "content": f"Goal: audit pair {patient} {from_visit} -> {to_visit} and produce a signed audit report. "
+                                            "If no decision can be made for this pair, produce a signed report that says why. "
+                                            "Rules: numbers only from tools; no digits, spelled-out numbers or percent words in your narrative; no clinical advice."}]
+    tool_calls, rejections, refusals, tools_used, final = 0, 0, 0, [], None
     for _turn in range(16):
         msg = chat(messages)
         _log(run_id, "model", {"input": {"messages": messages[-2:]}, "output": msg})
@@ -124,7 +130,7 @@ def run_pair(patient, from_visit, to_visit, model_fn=None, ledger=None, max_tool
                         {"role": "assistant", "content": (msg or {}).get("content"), "tool_calls": (msg or {}).get("tool_calls")})
         calls = (msg or {}).get("tool_calls") or []
         if not calls:
-            messages.append({"role": "user", "content": "Continue: call the next needed tool, or render_and_sign if you have pair_stats and qc_gate."})
+            messages.append({"role": "user", "content": "Continue toward the goal: produce the signed report, or explain why no decision can be made."})
             continue
         for call in calls[:1]:  # parallel_tool_calls is off; handle one at a time
             tool_calls += 1
@@ -135,27 +141,30 @@ def run_pair(patient, from_visit, to_visit, model_fn=None, ledger=None, max_tool
             if tool_calls > max_tool_calls:
                 final = {"status": "NEEDS_HUMAN", "reason": "tool-call budget exceeded"}; break
             out = agent_tools.call_tool(name, args)
+            tools_used.append(name)
             _log(run_id, "tool", {"tool": name, "input": args, "output": out})
             messages.append({"role": "tool", "tool_call_id": call.get("id", name), "name": name,
                              "content": json.dumps(out)})
-            if name == "render_and_sign":
-                if out.get("status") == "PASS":
-                    final = {"status": "AWAITING_SIGNOFF", "report": out["report"],
-                             "envelope": out["envelope"], "report_sha256": out["report_sha256"]}
-                elif out.get("status") == "REJECTED_UNVERIFIED_NUMBER":
-                    rejections += 1
-                    if rejections >= 3:
-                        final = {"status": "NEEDS_HUMAN", "reason": "3 rejected narratives", "rejections": rejections}
-                else:
-                    rejections += 1
-                    if rejections >= 3:
-                        final = {"status": "NEEDS_HUMAN", "reason": out.get("status"), "rejections": rejections}
+            status = out.get("status", "")
+            if status.startswith("REFUSED") or status.startswith("REJECTED"):
+                refusals += 1
+                if status.startswith("REJECTED"): rejections += 1
+                _log(run_id, "refusal", {"tool": name, "input": args,
+                                         "output": {"status": status, "refusals": refusals,
+                                                    "feedback": out.get("feedback", "")}})
+                if refusals >= 3:
+                    final = {"status": "NEEDS_HUMAN", "reason": f"refusal ladder: 3 refusals (last: {status})",
+                             "refusals": refusals}
+            elif name == "render_and_sign" and status == "PASS":
+                final = {"status": "AWAITING_SIGNOFF", "report": out["report"],
+                         "envelope": out["envelope"], "report_sha256": out["report_sha256"]}
             if final: break
         if final: break
     if final is None:
         final = {"status": "NEEDS_HUMAN", "reason": "turn budget exhausted without a passing report"}
     final.update({"run_id": run_id, "patient": patient, "from_visit": from_visit,
-                  "to_visit": to_visit, "tool_calls": tool_calls, "rejections": rejections})
+                  "to_visit": to_visit, "tool_calls": tool_calls, "rejections": rejections,
+                  "refusals": refusals, "tools_used": tools_used})
     if final["status"] == "AWAITING_SIGNOFF":
         d = LOGS / "agent_runs" / run_id; d.mkdir(parents=True, exist_ok=True)
         (d / "report.md").write_bytes(final["report"].encode())
@@ -180,7 +189,14 @@ def verify_run(run_id, path=None):
         if checker.sha_bytes(checker.canonical(e.get("input", {}))) != e.get("input_sha256"): ok = False; print(f"hash mismatch input at {e['kind']}")
         if checker.sha_bytes(checker.canonical(e.get("output", {}))) != e.get("output_sha256"): ok = False; print(f"hash mismatch output at {e['kind']}")
         prev = e.get("entry_sha256") or prev
-    renders = [e for e in mine if e.get("kind") == "tool" and e.get("tool") == "render_and_sign" and e["output"].get("status") == "PASS"]
+    # A pair may have been re-run; only the latest run segment's renders are
+    # checked against the current report.md (older segments signed older text).
+    fin_idx = [i for i, e in enumerate(entries) if e.get("run_id") == run_id and e.get("kind") == "final"]
+    seg_start = entries.index(mine[0])
+    if len(fin_idx) >= 2:
+        seg_start = fin_idx[-2] + 1
+    segment = [e for e in entries[seg_start:] if e.get("run_id") == run_id]
+    renders = [e for e in segment if e.get("kind") == "tool" and e.get("tool") == "render_and_sign" and e["output"].get("status") == "PASS"]
     for e in renders:
         # Verification needs no private key and writes no file: check the stored
         # envelope and the stored final report text against the pinned key.
@@ -215,7 +231,8 @@ def main(argv=None):
                    "needs_human": sum(r["status"] == "NEEDS_HUMAN" for r in results),
                    "tool_calls": sum(r["tool_calls"] for r in results),
                    "rejections": sum(r["rejections"] for r in results), "ledger": ledger.data,
-                   "results": [{k: r[k] for k in ("run_id", "status", "tool_calls", "rejections")} for r in results]}
+                   "refusals": sum(r.get("refusals", 0) for r in results),
+                   "results": [{k: r[k] for k in ("run_id", "status", "tool_calls", "rejections", "refusals", "tools_used")} for r in results]}
         (LOGS / "agent_summary.json").write_text(json.dumps(summary, indent=1))
         print(json.dumps(summary, indent=1)); return 0
     print("usage: python -m src.agent run [--limit N] | verify <run_id>"); return 2
