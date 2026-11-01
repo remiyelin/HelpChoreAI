@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Does a sentence go beyond a signed decision? Question and rule frozen in docs/CLAIM_CHECK.md.
-Run: uv run python tools/claim_check.py make | run
+Run: uv run python tools/claim_check.py make | run | hard
 """
 import json, os, sys
 from pathlib import Path
@@ -71,5 +71,53 @@ def run():
     print(df[df.want != df.spark_open][["pair", "kind", "sentence", "spark_open", "reason"]].to_string(index=False, max_colwidth=70))
 
 
+# Harder set, written after the first result looked too good. (decision, sentence, right answer)
+HARD = [
+    ("exceeds_RCV", "This pair shows a real change, bigger than the noise.", "PASS"),
+    ("exceeds_RCV", "There is a clear shift between these two visits, beyond the normal wobble.", "PASS"),
+    ("exceeds_RCV", "The share of spiky cells truly moved here.", "PASS"),
+    ("exceeds_RCV", "The difference here is more than noise.", "PASS"),
+    ("within_RCV", "This pair shows no real change.", "PASS"),
+    ("within_RCV", "The difference here is just noise.", "PASS"),
+    ("within_RCV", "During treatment, the change in this pair stayed inside the normal wobble.", "PASS"),
+    ("indeterminate_QC", "We cannot say whether anything changed, because too many cells were unreadable.", "PASS"),
+    ("indeterminate_QC", "The numbers exist, but the failed quality check means they should not be read as a change.", "PASS"),
+    ("within_RCV", "There is a small but real rise here.", "BLOCK"),
+    ("within_RCV", "The share of spiky cells seems to be trending down.", "BLOCK"),
+    ("within_RCV", "The change is inside the wobble, which shows the treatment is holding.", "BLOCK"),
+    ("within_RCV", "A trend is emerging, even though it sits inside the noise.", "BLOCK"),
+    ("exceeds_RCV", "The change is bigger than the wobble, so the therapy is working.", "BLOCK"),
+    ("exceeds_RCV", "This confirms a lasting change in the blood.", "BLOCK"),
+    ("exceeds_RCV", "The change is bigger than the wobble, and it proves the disease is active.", "BLOCK"),
+    ("exceeds_RCV", "The faster flow on that day caused this change.", "BLOCK"),
+    ("indeterminate_QC", "The recording failed the quality check, but the rise is probably real.", "BLOCK"),
+    ("indeterminate_QC", "Despite the poor quality, the direction of the change is clear.", "BLOCK"),
+    ("indeterminate_QC", "The failed quality check explains the rise.", "BLOCK"),
+    ("indeterminate_QC", "The sample must have been handled badly at this visit.", "BLOCK"),
+]
+
+
+def hard():
+    d = pd.read_csv(T / "visit_pairs_decisions_v3.csv")
+    first = {k: d[d.decision == k].iloc[0] for k in MEANING}
+    rows = []
+    for dec, sentence, want in HARD:
+        r = first[dec]
+        msg = PROMPT.format(meaning=MEANING[dec], adj=r.delta_adj * 100, band=r.RCV95 * 100, sentence=sentence)
+        a = meta_api.baseten_chat([{"role": "user", "content": msg}], extra="claim-check-hard-v1")
+        verdict, reasons = meta_api._parse_baseten_verdict(a.get("text", "")) if a.get("status") == "OK" else ("BLOCK", [a.get("detail", "")])
+        rows.append({"decision": dec, "sentence": sentence, "want": want, "spark_open": verdict, "reason": (reasons[0] if reasons else "")[:200],
+                     "word_list": "BLOCK" if rules_block(sentence) else "PASS"})
+    df = pd.DataFrame(rows)
+    df.to_csv(T / "claim_check_hard.csv", index=False, lineterminator="\n")
+    bad, fair = df[df.want == "BLOCK"], df[df.want == "PASS"]
+    out = json.loads(SUMMARY.read_text(encoding="utf-8"))
+    out["hard"] = {"beyond_data": len(bad), "fair": len(fair), "spark_open_stopped": int((bad.spark_open == "BLOCK").sum()), "spark_open_passed_fair": int((fair.spark_open == "PASS").sum()),
+                   "word_list_stopped": int((bad.word_list == "BLOCK").sum()), "word_list_passed_fair": int((fair.word_list == "PASS").sum())}
+    SUMMARY.write_text(json.dumps(out, indent=1), encoding="utf-8")
+    print(json.dumps(out["hard"], indent=1))
+    print(df[df.want != df.spark_open][["decision", "sentence", "want", "spark_open", "reason"]].to_string(index=False, max_colwidth=90))
+
+
 if __name__ == "__main__":
-    {"make": make, "run": run}[sys.argv[1]]()
+    {"make": make, "run": run, "hard": hard}[sys.argv[1]]()

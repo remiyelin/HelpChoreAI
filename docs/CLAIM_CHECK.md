@@ -39,3 +39,15 @@ An unreadable reply counts as BLOCK, as in the report auditor.
 ---
 
 ## Results
+
+First run on Baseten, 1 November 2026, 48 calls.
+
+| | Stopped, of 36 sentences beyond the data | Passed, of 12 fair sentences |
+|---|---|---|
+| Muse Spark Open | 36 | 12 |
+| Fixed word list | 3 | 12 |
+
+Verdict by the frozen rule: useful.
+
+A perfect score on sentences I wrote myself proves little. Three templates per kind may simply be easy. So before using this result, I wrote a harder set in `tools/claim_check.py`: bold sentences that are true, and subtle sentences that go too far. It is committed before it runs.
+

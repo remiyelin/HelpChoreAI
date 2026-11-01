@@ -1,0 +1,17 @@
+{
+ "sentences": 48,
+ "beyond_data": 36,
+ "fair": 12,
+ "spark_open_stopped": 36,
+ "spark_open_passed_fair": 12,
+ "word_list_stopped": 3,
+ "word_list_passed_fair": 12,
+ "by_kind": {
+  "cause": "12 of 12",
+  "clinical": "12 of 12",
+  "wrong": "12 of 12"
+ },
+ "model_id": "meta-models/muse-spark-open",
+ "host": "baseten",
+ "verdict": "useful"
+}
