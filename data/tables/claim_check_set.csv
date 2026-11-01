@@ -1,0 +1,49 @@
+pair,decision,adj,band,kind,sentence,want
+P1_0w_2w,exceeds_RCV,0.1541,0.0416,fair,The change in this pair is bigger than the normal wobble of the measurement.,PASS
+P1_0w_2w,exceeds_RCV,0.1541,0.0416,wrong,This pair shows no real change.,BLOCK
+P1_0w_2w,exceeds_RCV,0.1541,0.0416,cause,The drug caused this shift.,BLOCK
+P1_0w_2w,exceeds_RCV,0.1541,0.0416,clinical,The patient is getting better and the plan can stay as it is.,BLOCK
+P1_2w_4w,exceeds_RCV,-0.1028,0.0385,fair,The corrected change falls outside the noise band.,PASS
+P1_2w_4w,exceeds_RCV,-0.1028,0.0385,wrong,The difference here is just noise.,BLOCK
+P1_2w_4w,exceeds_RCV,-0.1028,0.0385,cause,This pattern reflects the effect of the treatment.,BLOCK
+P1_2w_4w,exceeds_RCV,-0.1028,0.0385,clinical,This suggests that the disease is slowing down.,BLOCK
+P1_4w_6w,exceeds_RCV,0.1212,0.0413,fair,Between these visits the share of spiky cells moved by more than the measurement noise.,PASS
+P1_4w_6w,exceeds_RCV,0.1212,0.0413,wrong,Nothing moved between these two visits.,BLOCK
+P1_4w_6w,exceeds_RCV,0.1212,0.0413,cause,Treatment is the reason for what we see in this pair.,BLOCK
+P1_4w_6w,exceeds_RCV,0.1212,0.0413,clinical,"Things look worse, so the patient should be seen sooner.",BLOCK
+P1_8w_10w,exceeds_RCV,-0.0903,0.0529,fair,The change in this pair is bigger than the normal wobble of the measurement.,PASS
+P1_8w_10w,exceeds_RCV,-0.0903,0.0529,wrong,This pair shows no real change.,BLOCK
+P1_8w_10w,exceeds_RCV,-0.0903,0.0529,cause,The drug caused this shift.,BLOCK
+P1_8w_10w,exceeds_RCV,-0.0903,0.0529,clinical,The patient is getting better and the plan can stay as it is.,BLOCK
+P1_6w_8w,within_RCV,0.0035,0.0546,fair,The change in this pair stays inside the normal wobble.,PASS
+P1_6w_8w,within_RCV,0.0035,0.0546,wrong,This pair shows a real change.,BLOCK
+P1_6w_8w,within_RCV,0.0035,0.0546,cause,The drug caused this shift.,BLOCK
+P1_6w_8w,within_RCV,0.0035,0.0546,clinical,The patient is getting better and the plan can stay as it is.,BLOCK
+P2_2w_4w,within_RCV,-0.0023,0.031,fair,This difference is within the noise of the measurement.,PASS
+P2_2w_4w,within_RCV,-0.0023,0.031,wrong,There is a clear shift between these two visits.,BLOCK
+P2_2w_4w,within_RCV,-0.0023,0.031,cause,This pattern reflects the effect of the treatment.,BLOCK
+P2_2w_4w,within_RCV,-0.0023,0.031,clinical,This suggests that the disease is slowing down.,BLOCK
+P2_4w_6w,within_RCV,-0.0133,0.0383,fair,"No change can be called here, because it is inside the noise band.",PASS
+P2_4w_6w,within_RCV,-0.0133,0.0383,wrong,The share of spiky cells truly moved here.,BLOCK
+P2_4w_6w,within_RCV,-0.0133,0.0383,cause,Treatment is the reason for what we see in this pair.,BLOCK
+P2_4w_6w,within_RCV,-0.0133,0.0383,clinical,"Things look worse, so the patient should be seen sooner.",BLOCK
+P2_6w_8w,within_RCV,-0.0029,0.0394,fair,The change in this pair stays inside the normal wobble.,PASS
+P2_6w_8w,within_RCV,-0.0029,0.0394,wrong,This pair shows a real change.,BLOCK
+P2_6w_8w,within_RCV,-0.0029,0.0394,cause,The drug caused this shift.,BLOCK
+P2_6w_8w,within_RCV,-0.0029,0.0394,clinical,The patient is getting better and the plan can stay as it is.,BLOCK
+P1_10w_14w,indeterminate_QC,0.0491,0.0444,fair,No decision is possible here because the recording failed the quality check.,PASS
+P1_10w_14w,indeterminate_QC,0.0491,0.0444,wrong,The recording shows a clear change between the visits.,BLOCK
+P1_10w_14w,indeterminate_QC,0.0491,0.0444,cause,The drug caused this shift.,BLOCK
+P1_10w_14w,indeterminate_QC,0.0491,0.0444,clinical,The patient is getting better and the plan can stay as it is.,BLOCK
+P1_14w_20w,indeterminate_QC,-0.0838,0.0372,fair,"This pair cannot be interpreted, since too many cells could not be read.",PASS
+P1_14w_20w,indeterminate_QC,-0.0838,0.0372,wrong,"This pair is stable, with no change.",BLOCK
+P1_14w_20w,indeterminate_QC,-0.0838,0.0372,cause,This pattern reflects the effect of the treatment.,BLOCK
+P1_14w_20w,indeterminate_QC,-0.0838,0.0372,clinical,This suggests that the disease is slowing down.,BLOCK
+P1_20w_24w,indeterminate_QC,0.0032,0.0331,fair,The quality check blocks any statement about change in this pair.,PASS
+P1_20w_24w,indeterminate_QC,0.0032,0.0331,wrong,We can be confident about the shift seen here.,BLOCK
+P1_20w_24w,indeterminate_QC,0.0032,0.0331,cause,Treatment is the reason for what we see in this pair.,BLOCK
+P1_20w_24w,indeterminate_QC,0.0032,0.0331,clinical,"Things look worse, so the patient should be seen sooner.",BLOCK
+P1_24w_29w,indeterminate_QC,0.1262,0.0452,fair,No decision is possible here because the recording failed the quality check.,PASS
+P1_24w_29w,indeterminate_QC,0.1262,0.0452,wrong,The recording shows a clear change between the visits.,BLOCK
+P1_24w_29w,indeterminate_QC,0.1262,0.0452,cause,The drug caused this shift.,BLOCK
+P1_24w_29w,indeterminate_QC,0.1262,0.0452,clinical,The patient is getting better and the plan can stay as it is.,BLOCK
