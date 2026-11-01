@@ -1,112 +1,114 @@
 # HelpChoreAI
 
-**HelpChoreAI: A verifiable biophysical measurement & protocol-variance auditing workstation for microfluidic RBC recordings in chorea-acanthocytosis (VPS13A disease).**
+**A quality check for medical research measurements. Before anyone trusts a change, it asks if the change is real, noise, or a bad recording.**
 
-## The problem
+![One patient: stable near 20%, then 38%, then back](docs/media/video/thumb.png)
 
-Deformability cytometry measures peripheral target engagement, but hydrodynamic
-shear stretches cells (confounding health readouts) and high skip rates are
-associated with false alarms in naive binomial statistics. In our dev data the naive binomial rule false-alarms at 32.2%,
-and raw health fractions fall with flow in every patient — a flow artefact
-that looks exactly like a treatment effect if you do not adjust for it.
+- Live page: LIVE_URL
+- Video: VIDEO_URL
 
-## What we built
+Hackathon theme: **Push the Frontier**, "accelerate a scientific experiment".
 
-A four-view workstation over the Reichel et al. (2022) microfluidic RBC
-recordings (Figshare Collection 5793482, CC BY 4.0), running from
-`uv run python src/server.py` at http://127.0.0.1:8765.
+Research use only. Not medical advice. It diagnoses nothing and treats no one.
 
-- **View 1 — Visit-pair setup.** Pick a patient and consecutive visits with
-  dasatinib/lithium treatment timeline context; every pair carries its raw
-  and flow-adjusted change, RCV95 band, and QC decision.
-- **View 2 — Per-cell overlay review.** 961 real microfluidic frames
-  extracted via HTTP Range, with author contours, SAM 3.1 spicule recovery
-  (SAM masks find the concavities convex hulls erase: solidity 0.940 vs
-  0.954 by author class), and a live human second-rater whose
-  Cohen kappa / Gwet AC1 against the author updates as you label.
-- **View 3 — RCV decision (default view).** Unpenalised log-flow binomial
-  GLM standardisation to 0.016 µL/s with a run-cluster-bootstrap,
-  t-calibrated RCV95 and a skip-rate QC gate (skip rate > 0.25 refuses to
-  decide). Simulation proves this cuts the false-alarm rate from 32.2% to
-  6.4%. A Naive vs Flow-adjusted toggle shows what the naive reading would
-  have called.
-- **View 4 — Verified report.** Numbers are templated only from an
-  Ed25519-signed Checker payload (public key pinned and committed, private
-  key git-ignored); a fail-closed open-weight compliance auditor on Baseten
-  (`meta-models/muse-spark-open`) must explicitly PASS; and the verifiable
-  tool-calling audit agent (P-10) runs verification inside its deterministic
-  tools, escalates to `NEEDS_HUMAN` after three rejected narratives, and
-  leaves every passing report `AWAITING_SIGNOFF` for researcher sign-off
-  bound to the report hashes.
+## What it tells a lab
 
-Two structured second-rater protocols run the same prompt and JSON schema:
-cloud `muse-spark-1.3` (author AC1 0.392, cannot_tell 43.8%) and open-weight
-`muse-spark-open` (AC1 0.464, cannot_tell 27.5%; head-to-head AC1 0.772).
-A 12-report tamper benchmark: local auditor sensitivity 0.667, Baseten
-open-weight auditor 0.889 (3/3 paraphrased clinical advice caught), both at
-specificity 1.000.
+VPS13A disease is a very rare neurodegenerative disorder. People with it have spiky red blood cells. Small studies follow the share of spiky cells from visit to visit, using a microscope and a narrow channel. In a study this small, one misread visit matters.
 
-## Holdout validation
+HelpChoreAI answers three questions before anyone interprets a change:
 
-The pipeline was frozen and its predictions pre-registered before any
-holdout data was touched (`PREREGISTRATION.md`, `git tag eval-v1`), then
-unsealed exactly once on P3 and P5 (239 runs, 13 visits, 11 pairs, $0 API
-spend). Results: **100% of visits showed a negative flow slope** (pooled
-slope −0.322, prediction MET), flow adjustment reduced overdispersion in
-100% of visits (predicted 60–90%, NOT MET — reported as missed), and the
-QC gate blocked all three dramatic late swings (+17.4%, −15.4%, −14.4%)
-from being called treatment effects, returning 8 within_RCV / 0 exceeds /
-3 indeterminate_QC. Nothing was re-fitted to force a match. The rater
-and SAM holdout predictions (d)/(e) were measured later in P-23 and
-scored NOT MET as joint predictions (docs/POPULATION.md); off the
-adjudication queue, the SAM shape gain over the hull baseline
-disappears (BASE+SAM 0.888 vs BASE 0.892 LOPO kappa).
+1. Was the recording good enough?
+2. Is the change bigger than the normal wobble of this measurement?
+3. How many runs does the next visit need?
 
-## Meta AI tooling
+The statistics decide. AI does the looking, the writing and the checking. AI cannot change the numbers.
 
-| Tool | Use in HelpChoreAI |
+## Results
+
+Data: Reichel et al. 2022, five patients. Three were used to build the method (dev). Two were sealed until the code and five predictions were frozen under git tag `eval-v1`.
+
+| Finding | Number | Who |
+|---|---|---|
+| Faster flow, fewer spiky cells, in every visit | 37 of 37 visits | dev and sealed |
+| Same effect on sealed patients | slope −0.32 in both (95% CI −0.36 to −0.28, and −0.37 to −0.27) | dev, sealed |
+| A normal reading raises many alarms | 19 alarms in 32 visit pairs | dev and sealed |
+| What the rule does with them | 5 confirmed, 4 ruled out, 10 refused | dev and sealed |
+| A change the normal reading missed | 1 | dev |
+| Smallest change this protocol can call | about 4 points (median band ±3.9) | dev and sealed |
+| The tracker stores outlines that cannot show spikes | 2,673 of 2,673 cells fully convex | dev |
+| Signed reports that verify on a fresh clone | 21 of 21 | dev |
+| Tool checks stop wrong reports, scripted model | 9 signed with checks off, 0 with checks on | dev |
+
+<!--open-result-->
+Open weights: 16 of 21 reports signed in open-weight mode carry the same numbers as the cloud run.
+<!--/open-result-->
+
+## What did not work
+
+- SAM shape gave little classifier gain on all cells (kappa 0.237 to 0.280) and none on sealed patients (0.033 to −0.052, 180 cells). An early gain of 0.28 to 0.37 existed only on a hard, selected subset.
+- AI raters agree only weakly with the human on 100 random cells (AC1 0.345 for Muse Spark 1.3, 0.247 for Muse Spark Open).
+- In video mode SAM kept cells in view, but spiky and smooth cells were no longer different in shape. So we track on video and measure on single frames.
+- Five predictions were frozen before unsealing. One held fully, four missed at least in part. See the scorecards in [PREREGISTRATION.md](PREREGISTRATION.md) and [docs/POPULATION.md](docs/POPULATION.md).
+
+## Meta tools
+
+| Tool | What it does here |
 |---|---|
-| SAM 3.1 | Spicule-recovery masks, video tracking audit, IoU vs author hulls |
-| Muse Spark 1.3 | Structured second rater, report narratives, agent function calling |
-| Muse Spark Open (Baseten) | Fail-closed compliance auditor, open-weight second rater |
-| Muse Voice Transcribe | Hands-free overlay review notes |
-| Muse | Development of this repository |
+| SAM 3.1 | Draws the real cell edge from a box prompt (about 2,200 cached calls). Video tracking, with a position gate for identity lag |
+| Muse Spark 1.3 | Audit agent with tool calling; second rater with an enforced schema (about 335 cached calls, plus agent turns) |
+| Muse Spark Open | Open-weight rater, agent and language auditor, through OpenAI-compatible hosts (about 470 cached calls). See [docs/OPEN_WEIGHT.md](docs/OPEN_WEIGHT.md) |
+| Muse Voice Transcribe | Hands-free review notes in the local tool |
+| Muse Code | Wrote most of this repository |
 
-All paid calls go through the cache in `data/api_cache/` — reruns are free,
-and every integration reports BLOCKED rather than fabricating a result when
-a key or model is unavailable.
+## Built during the hackathon
 
-## Built during the hackathon vs pre-hackathon exploration
+All code in this repository was written during the event. First commit: 28 October 2026. See `git log`.
 
-- **Built during the hackathon (26 Oct – 4 Nov 2026):** everything in this
-  repository — ingest, flow/RCV statistics, Checker, raters, SAM audits,
-  the four-view UI, the audit agent, pre-registration and holdout
-  evaluation (first commit 28 Oct 2026; see `docs/` and git history).
-- **Pre-hackathon exploration (upstream, not ours):** the Reichel et al.
-  (2022) dataset, tracker and analysis notebooks on Figshare, which we
-  ingest and audit. No HelpChoreAI code predates the hackathon.
+## Before the hackathon
 
-## Limitations
+- Third party: the Reichel et al. 2022 dataset and its tracker outputs, and the published papers we read.
+- Ours: from 16 to 25 October we read papers, planned the work and explored the public dataset. Those notes, templates and scripts are not in this repository, and no file in it is identical to any of them.
 
-Research prototype on one dataset (five patients; three dev, two holdout).
-The classifier and both raters are triage devices, never ground truth;
-statistical power for a +0.05 fraction change is only ~0.31 at current run
-counts, and 3 of 11 holdout pairs were QC-indeterminate. On an
-unselected dev sample both raters agree with the author less than on
-the queue sample, and the open-weight holdout rating is unmeasured
-(Baseten refused the calls with HTTP 402 in P-23). Model-cost figures in run ledgers are stated
-estimates where the API does not expose billing.
+## Where else this could work
 
-## Research use only
+Built for one rare disease. The method fits any lab that measures the same sample many times, records what might disturb the measurement, and compares visits. Candidates: other blood cell shape tests, stored blood quality, imaging flow cytometry, manual cell counts.
 
-Research use only. RBC morphology is a peripheral target-engagement marker,
-not a measure of central nervous system progression. Every result must be
-reviewed by a qualified researcher using the per-cell visual overlay.
-Nothing here is medical advice.
+None of these has been tested. The −0.32 slope belongs to this device and this label. Each new setting needs its own calibration.
+
+## Limits
+
+- Five patients, one lab, one human rater.
+- The label pools two kinds of spiky cell, acanthocytes and echinocytes.
+- The false-alarm simulation (0.322 to 0.064) splits runs within one visit. It does not cover day-to-day variation.
+- Power is 0.31 for a 5-point change and 0.77 for a 10-point change at current run counts.
+- We measured that speed changes the reading, not why.
+- Whether red cell shape tracks the disease in the brain is unknown. This makes the marker honest, not meaningful.
+
+## Run it
+
+```bash
+git clone <this repository>
+cd HelpChoreAI
+uv sync
+uv run pytest -q
+```
+
+Verify a signed report. No key needed, nothing is written:
+
+```bash
+uv run python -m src.agent verify P1_0w_2w
+```
+
+Open the page locally:
+
+```bash
+python -m http.server 8000 --directory web
+```
+
+The page replays signed results and calls no model. The local tool with sign-off and voice notes runs with `uv run python src/server.py` on port 8765. Live model calls need keys in `.env` (see `.env.example`).
+
+Raw data is not in the repository. `tools/figshare_ingest.py` fetches it from the public source.
 
 ## Licence and attribution
 
-Code: MIT (see `LICENSE`). Data: Reichel et al. 2022, Figshare Collection
-5793482, CC BY 4.0 (see `ATTRIBUTION.md`). Copy `.env.example` to `.env`
-for live model keys; `.env`, private keys and the initials map are
-git-ignored and must never be committed.
+Code: MIT, see [LICENSE](LICENSE). Data: Reichel et al. 2022, Figshare Collection 5793482, CC BY 4.0. See [ATTRIBUTION.md](ATTRIBUTION.md).

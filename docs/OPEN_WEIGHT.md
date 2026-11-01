@@ -1,86 +1,64 @@
-# Open-Weight Only Mode (P-25)
+# Open-weight mode
 
-Set `OPEN_WEIGHT_ONLY=1` to run with **Meta API spend of exactly
-$0.00**. In this mode every Meta entry point in `src/meta_api.py`
-(chat, rater, SAM, video, voice) refuses **before the network** with
-status `BLOCKED_OPEN_ONLY`; the agent and the narrative path route to
-Baseten instead. This was **tested on Baseten only**.
+With `OPEN_WEIGHT_ONLY=1`, every Meta entry point in `src/meta_api.py` (chat, rater, SAM, video, voice) refuses before the network with status `BLOCKED_OPEN_ONLY`. The agent, the narrative and the auditor go to Muse Spark Open instead. Meta spend in this mode is exactly $0.00.
 
-Terminology, precisely: this is **open weights, hosted on Baseten
-here; the same OpenAI-compatible endpoint can run on your own
-hardware** by pointing the base URL at your own deployment (below).
-Baseten is a hosted service, not on-premise — do not describe this
-setup as on-premise.
+Wording: **open weights, hosted by a partner here; the same OpenAI-compatible endpoint can run on your own hardware.** A hosted service is not on-premise.
 
-## Pointing at your own endpoint
+## Why it matters
 
-The Baseten calls are OpenAI-compatible chat completions. To use your
-own deployment instead of Baseten:
+Numbers come from code, not from the model. So a model can be replaced without touching a signed number. That is a controlled change: swap the model, compare the hashes, and only the words differ.
 
-1. Serve the model behind any OpenAI-compatible `/v1/chat/completions`
-   endpoint (for example vLLM or SGLang serving the same weights).
-2. Set `BASETEN_API_URL` to your endpoint's chat-completions URL and
-   `BASETEN_API_KEY` to whatever token your server expects (or a dummy
-   value if it ignores auth).
-3. Set `OPEN_WEIGHT_ONLY=1` and run as usual. The served model id is
-   discovered once per run with `GET /v1/models` and recorded in
-   every result row; if your server serves a different model id, set
-   it in the parity CSV from that discovery, not by assumption.
+## Choosing a host
 
-## Mechanism
+Any OpenAI-compatible endpoint works. Set these in `.env`:
 
-`GET /v1/models` on the endpoint lists `meta-models/muse-spark-open`
-as served. A probe completion confirmed that **the endpoint returns
-native tool calls** (`message.tool_calls`), so the agent uses Baseten
-function calling directly — no JSON-action loop was needed. The
-Baseten agent chat validates each message in code (content or
-tool_calls required), retries once on an invalid message, then
-refuses. All calls go through `data/api_cache/`; repeat runs are
-cache hits.
+```text
+OPEN_BASE_URL=<endpoint>/v1
+OPEN_API_KEY=<key>
+OPEN_MODEL=<model name on that host>
+OPEN_REASONING_EFFORT=low
+```
 
-## Parity result — reported as observed (BUG)
-
-The number-computing code path is unchanged, so payload hashes should
-match exactly. They do **where the open run completes**: 16 of 16
-completed pairs have `payload_sha256` identical to the cloud run.
-
-But the expected **21 of 21 did not happen**: 5 indeterminate pairs
-(P1 10w→14w, P1 14w→20w, P1 29w→53w, P2 18w→22w, P2 22w→27w) ended
-`NEEDS_HUMAN` with no report. Diagnosis from the open trail: the
-open-weight model spends its tool budget on repeated inspection
-calls (`sample_cells`, `rater_summary` for both visits, repeatedly)
-and never calls `render_and_sign` before the 8-tool-call budget or
-the refusal ladder ends the run — for P1 10w→14w it used 9 calls
-without rendering at all. This is an agent-loop/model-behaviour bug
-in open-weight mode, **not** a numbers-path difference: no completed
-pair disagrees on any payload value. Per the task, this is stopped
-and reported rather than forced. Parity table:
-`data/tables/open_weight_parity.csv` (the 5 failed pairs have empty
-open hashes and `NEEDS_HUMAN` status).
-
-Spark Open audit of the 16 final reports (`baseten_audit`):
-14 PASS, 2 BLOCK. Both BLOCKs cite the citation boilerplate numbers
-(“CC BY 4.0”, “Reichel et al. 2022”) as numbers not in the payload —
-a known-style false positive of the strict auditor prompt — and one
-also flags a genuine narrative overreach (“stable disease …”) written
-by the open-weight model. Per-pair verdicts:
-`logs/agent_runs/<pair>/open_weight_audit.json`.
-
-## Tamper benchmark (12 old + 12 paraphrases)
-
-Local rules = `checker.audit_report`; Spark Open = `baseten_audit`
-verdict. Sensitivity is the share of tampered reports blocked;
-specificity is the share of 12 clean reports passed.
-
-| Set | Local rules | Spark Open |
+| Host | Base URL | Model |
 |---|---|---|
-| Old tampered 12 (sensitivity) | 0.500 (6/12) | 0.833 (10/12) |
-| Paraphrased advice 12 (sensitivity) | 0.000 (0/12) | 1.000 (12/12) |
-| Clean 12 (specificity) | 1.000 (12/12) | 0.833 (10/12) |
+| Baseten (default) | `https://inference.baseten.co/v1` | `meta-models/muse-spark-open` |
+| Modal Shared Endpoint | from the dashboard | `modal endpoint create --shared --model meta-models/Muse-Spark-Open-816B-A42B` |
+| Fireworks | `https://api.fireworks.ai/inference/v1` | `accounts/fireworks/models/muse-spark-open` |
+| Your own server | your vLLM or SGLang endpoint | as served |
 
-Local rules miss every paraphrased-advice report (their phrases
-match no banned string); Spark Open catches all 12, at the cost of
-blocking 2 clean reports (the citation-number false positive above).
-Detail: `logs/tamper_benchmark_open.json`. Baseten calls in this
-task (probes, agent turns, audits): approximately 191, under the 200
-cap; Meta calls: 0.
+Only hosts with a `logs/tamper_benchmark_<host>.json` file have been tested.
+
+## Running it
+
+```bash
+uv run python tools/open_weight_parity.py runs --label modal
+uv run python tools/open_weight_parity.py audit --label modal
+uv run python tools/open_weight_parity.py tamper --label modal
+uv run python tools/open_weight_parity.py table
+```
+
+Each step writes to the cache, so a repeat costs nothing. Each step stops at 80 new calls.
+
+## Evidence
+
+| What | Where |
+|---|---|
+| Reports signed in open-weight mode | `logs/open_weight_runs/agent_runs/<pair>/` |
+| Trail of those runs | `logs/open_weight_runs/audit_trail.jsonl` |
+| Audit of each committed report | `logs/agent_runs/<pair>/open_weight_audit.json` |
+| Hash comparison, 21 pairs | `data/tables/open_weight_parity.csv` |
+| Tamper benchmark per host | `logs/tamper_benchmark_<host>.json` |
+
+`tests/test_open_weight_evidence.py` checks that every audit file carries the hash of the report beside it, and that every open-weight report verifies and has the same payload hash as the cloud run.
+
+## What happened on the first run
+
+16 of 21 pairs finished on Baseten, all with identical payload hashes. Five pairs with no decision ended `NEEDS_HUMAN`. There were three causes, all in our loop and not in the numbers:
+
+1. A rule read "skip rate exceeds the threshold" as a claim of change.
+2. The agent answered only the first of several tool calls, and the budget of 8 calls ran out before signing.
+3. The auditor counted the citation year, the licence version and the patient code as violations.
+
+All three are fixed. The first audit files also described open-run text instead of the committed reports, so they were deleted and the audit was repeated.
+
+Earlier benchmark on Baseten, before the auditor prompt fix: Spark Open stopped 12 of 12 paraphrased advice reports (local rules 0 of 12) and passed 10 of 12 clean reports (`logs/tamper_benchmark_open.json`).
