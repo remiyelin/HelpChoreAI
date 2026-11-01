@@ -328,7 +328,7 @@ def baseten_rater(png_list, repeat=0):
         content.append({"type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.b64encode(png).decode()}})
     body = {"model": "meta-models/muse-spark-open",
             "messages": [{"role": "user", "content": content}],
-            "response_format": {"type": "json_schema", "json_schema": {"name": "rbc_second_rater", "strict": True, "schema": RATER_SCHEMA}}}
+            "response_format": {"type": "json_schema", "json_schema": {"name": "rbc_second_rater", "strict": True, "schema": RATER_SCHEMA}}} | _open_extra()
     last_err = None
     for attempt in range(2):  # initial call + at most one retry on invalid JSON
         try:
@@ -339,7 +339,7 @@ def baseten_rater(png_list, repeat=0):
                 text = "".join(p.get("text", "") for p in text if isinstance(p, dict))
             parsed = _validate_rater(json.loads(text))
             out = {"status": "OK", "model": "meta-models/muse-spark-open", "rater": parsed,
-                   "raw_id": resp.get("id"), "_new_calls": attempt + 1}
+                   "raw_id": resp.get("id"), "usage": resp.get("usage"), "_new_calls": attempt + 1}
             hit.write_text(json.dumps(out, indent=1))
             return out | {"_cache": "miss"}
         except Exception as e:
