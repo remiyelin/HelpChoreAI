@@ -97,7 +97,11 @@ class Ledger:
 
 
 def _spark_tools_chat(messages, ledger=None):
-    """One cached muse-spark-1.3 function-calling turn (data/api_cache). Returns assistant message dict."""
+    """One cached function-calling turn (data/api_cache). Returns assistant message dict.
+    In OPEN_WEIGHT_ONLY mode the turn goes to Baseten native tool calling and
+    no Meta call or Meta ledger charge can happen."""
+    if meta_api.open_weight_only():
+        return meta_api.baseten_agent_chat(messages, TOOL_SCHEMAS)
     meta_api.CACHE.mkdir(parents=True, exist_ok=True)
     ck = meta_api._key(MODEL + "-agent", [{"messages": messages, "tools": TOOL_SCHEMAS}], extra="agent-v1")
     hit = meta_api.CACHE / f"{ck}.json"

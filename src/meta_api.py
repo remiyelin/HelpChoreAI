@@ -27,7 +27,17 @@ def _post(url, key, body, timeout=60):
 def _public():
     return os.environ.get("PUBLIC_MODE") == "1"
 
+def open_weight_only():
+    return os.environ.get("OPEN_WEIGHT_ONLY") == "1"
+
+def _open_blocked(what="meta"):
+    return {"status": "BLOCKED_OPEN_ONLY",
+            "detail": f"OPEN_WEIGHT_ONLY=1: {what} (Meta) call refused before the network; Meta spend stays $0.00",
+            "_cache": "miss", "_new_calls": 0}
+
 def chat_cached(base_url, api_key, model, messages, extra=""):
+    if open_weight_only() and ("api.meta.ai" in str(base_url) or str(base_url).rstrip("/") == META_BASE.rstrip("/")):
+        return _open_blocked("chat")
     CACHE.mkdir(parents=True, exist_ok=True)
     ck = _key(model, messages, extra)
     hit = CACHE / f"{ck}.json"
@@ -68,6 +78,7 @@ def sam_segment(png_bytes, author_poly=None, wh=(200, 40)):
     """REAL SAM 3.1 via Responses API (streaming) + official meta_sam_parser. Cached by image+prompt hash.
     Concept prompt 'red blood cell' first; box-prompt (author box) fallback is labelled honestly.
     Returns mask polygon in crop coords + raster IoU vs author polygon when provided."""
+    if open_weight_only(): return _open_blocked("SAM")
     load_env()
     key = os.environ.get("META_MODEL_API_KEY") or os.environ.get("MODEL_API_KEY")
     img_hash = hashlib.sha256(png_bytes).hexdigest()
@@ -236,6 +247,7 @@ def spark_rater(png_list, repeat=0):
     """Structured second-rater call: muse-spark-1.3, reasoning_effort=low, enforced json_schema.
     Cached by image hashes + repeat index (repeats are distinct cache entries by design).
     Returns the parsed rater dict, or BLOCKED/CACHE_ONLY — never a fabricated judgement."""
+    if open_weight_only(): return _open_blocked("rater")
     load_env()
     key = os.environ.get("META_MODEL_API_KEY") or os.environ.get("MODEL_API_KEY")
     hashes = [hashlib.sha256(p).hexdigest() for p in png_list]
@@ -323,6 +335,78 @@ def baseten_rater(png_list, repeat=0):
             last_err = f"{type(e).__name__}: {e}"
     return {"status": "BLOCKED", "detail": last_err, "rater": None, "_cache": "miss", "_new_calls": 2}
 
+BASETEN_MODEL = "meta-models/muse-spark-open"
+
+
+def baseten_models():
+    """GET /v1/models on the Baseten endpoint (cached in data/api_cache). Returns served ids."""
+    load_env()
+    key = os.environ.get("BASETEN_API_KEY")
+    CACHE.mkdir(parents=True, exist_ok=True)
+    hit = CACHE / "baseten_models.json"
+    if hit.exists():
+        out = json.loads(hit.read_text()); out["_cache"] = "hit"; return out
+    if not key:
+        return {"status": "BLOCKED", "detail": "BASETEN_API_KEY not set", "models": [], "_cache": "miss"}
+    try:
+        req = urllib.request.Request(BASETEN_URL.rsplit("/chat/completions", 1)[0] + "/models",
+                                     headers={"Authorization": f"Bearer {key}"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            data = json.loads(r.read().decode())
+        out = {"status": "OK", "models": [m.get("id") for m in data.get("data", [])]}
+    except Exception as e:
+        return {"status": "BLOCKED", "detail": f"{type(e).__name__}: {e}", "models": [], "_cache": "miss"}
+    hit.write_text(json.dumps(out, indent=1))
+    return out | {"_cache": "miss"}
+
+
+def baseten_chat(messages, model=None, extra="baseten-chat-v1"):
+    """One cached Baseten chat completion. Returns {status, model, text, _cache}."""
+    model = model or BASETEN_MODEL
+    return chat_cached(BASETEN_URL.rsplit("/chat/completions", 1)[0], os.environ.get("BASETEN_API_KEY"),
+                       model, messages, extra=extra)
+
+
+def baseten_narrative(payload):
+    """Open-weight narrative (Baseten), same rules as spark_narrative."""
+    prompt = ("Write ONE short narrative sentence for a research audit report about a visit-to-visit change "
+              "that was assessed against a combined measurement-and-protocol noise band. "
+              "Rules: no digits, no numbers spelled out, no diagnosis, no disease-progression claim, "
+              "no treatment advice. Decision category: " + str(payload.get("decision")) +
+              ". Treatment context: " + str(payload.get("treatment")) + ".")
+    return baseten_chat([{"role": "user", "content": prompt}], extra="narrative:" + json.dumps(payload, sort_keys=True))
+
+
+def baseten_agent_chat(messages, tools, model=None):
+    """Agent chat via Baseten native tool calling (the endpoint returns
+    message.tool_calls, verified 2026-11-01). Cached by messages+tools.
+    Invalid message (no content and no tool_calls): one retry, then a
+    refusal message. Returns the assistant message dict."""
+    load_env()
+    model = model or BASETEN_MODEL
+    key = os.environ.get("BASETEN_API_KEY")
+    CACHE.mkdir(parents=True, exist_ok=True)
+    ck = _key(model + "-agent-baseten", [{"messages": messages, "tools": tools}], extra="agent-open-v1")
+    hit = CACHE / f"{ck}.json"
+    if hit.exists():
+        out = json.loads(hit.read_text()); return out["message"]
+    if not key:
+        raise RuntimeError("BLOCKED: BASETEN_API_KEY not set")
+    body = {"model": model, "messages": messages, "tools": tools,
+            "tool_choice": "auto", "parallel_tool_calls": False}
+    last = None
+    for _attempt in range(2):
+        resp = _post(BASETEN_URL, key, body, timeout=180)
+        msg = resp.get("choices", [{}])[0].get("message", {})
+        if isinstance(msg, dict) and (msg.get("tool_calls") or msg.get("content")):
+            hit.write_text(json.dumps({"message": msg, "model": resp.get("model", model),
+                                       "usage": resp.get("usage")}, indent=1))
+            return msg
+        last = msg
+    return {"role": "assistant", "content": "REFUSED: open-weight endpoint returned no usable message "
+                                            "(no content and no tool calls) after one retry."}
+
+
 def _run_coro(coro):
     import asyncio
     loop = asyncio.SelectorEventLoop()  # Proactor self-pipe is sandbox-blocked (P-03)
@@ -336,6 +420,7 @@ def sam_prompt_mask(png_bytes, prompt_text, repeat=0, tag="prompt-v1"):
     Requests metadata.include_confidence="true". Returns decoded masks as row spans in
     image coords + per-mask confidence (None if the server did not emit it). Cached by
     image+prompt+repeat. No IoU here — callers compute it with geometry.py."""
+    if open_weight_only(): return _open_blocked("SAM")
     load_env()
     key = os.environ.get("META_MODEL_API_KEY") or os.environ.get("MODEL_API_KEY")
     img_hash = hashlib.sha256(png_bytes).hexdigest()
@@ -414,6 +499,7 @@ def _sam_prompt_run(key, png_bytes, prompt_text):
 def sam_upload_video(mp4_bytes, filename="clip.mp4"):
     """Files API upload (purpose=user_data) for SAM video. File id cached by content hash
     in data/api_cache/video_uploads.json (upload is not a model call; tracking is)."""
+    if open_weight_only(): return _open_blocked("SAM video upload")
     load_env()
     key = os.environ.get("META_MODEL_API_KEY") or os.environ.get("MODEL_API_KEY")
     if not key: return {"status": "BLOCKED", "detail": "META_MODEL_API_KEY not set"}
@@ -441,6 +527,7 @@ def sam_track_video(file_id, mp4_bytes, prompt_text):
     Prompt text carries object prompts (frame = clip frame index); metadata requests
     confidence + forward propagation. Returns per-frame mask row spans keyed by
     (frame, object_id) + usage (incl. video_frames_processed). Cached by clip+prompt."""
+    if open_weight_only(): return _open_blocked("SAM video")
     load_env()
     key = os.environ.get("META_MODEL_API_KEY") or os.environ.get("MODEL_API_KEY")
     CACHE.mkdir(parents=True, exist_ok=True)
@@ -530,6 +617,7 @@ def spark_visual_check(png_bytes):
     return chat_cached(META_BASE, key, "muse-spark-1.3", img_msg(prompt, png_bytes), extra=hashlib.sha256(png_bytes).hexdigest())
 
 def spark_narrative(payload):
+    if open_weight_only(): return baseten_narrative(payload)
     key = os.environ.get("META_MODEL_API_KEY")
     prompt = ("Write ONE short narrative sentence for a research audit report about a visit-to-visit change "
               "that was assessed against a combined measurement-and-protocol noise band. "
@@ -560,9 +648,9 @@ def baseten_audit(report, payload):
               'Reply with strict JSON only: {"verdict": "PASS"|"BLOCK", "reasons": [...]}. '
               'Use "PASS" only if there are no flags; otherwise use "BLOCK".\nPAYLOAD: '
               + json.dumps(payload) + "\nREPORT:\n" + report)
-    # Baseten serves meta-models/muse-spark-open; the -1026 ID 404s (not billed). Try in order.
+    # Baseten serves meta-models/muse-spark-open; the -1026 ID 404s. Served model first.
     r = {"status": "BLOCKED", "detail": "API key not set", "_cache": "miss"}
-    for model in ["meta-models/muse-spark-open-1026", "meta-models/muse-spark-open"]:
+    for model in ["meta-models/muse-spark-open", "meta-models/muse-spark-open-1026"]:
         r = chat_cached(BASETEN_URL.rsplit("/chat/completions", 1)[0], key, model,
                         [{"role": "user", "content": prompt}])
         if r.get("status") == "OK":
@@ -598,6 +686,7 @@ def _post_multipart(url, key, body, ctype, timeout=120):
 def transcribe_audio(wav_bytes, mode="PUSH_TO_TALK", filename="review.wav"):
     """Muse Voice Transcribe (POST /v1/asr/transcribe, multipart request-JSON + audio). Cached by audio hash.
     Returns {status: OK, text, turns, audio_ms} or BLOCKED with the real error — never a fabricated transcript."""
+    if open_weight_only(): return _open_blocked("voice")
     load_env()
     key = os.environ.get("META_MODEL_API_KEY") or os.environ.get("MODEL_API_KEY")
     if not key: return {"status": "BLOCKED", "detail": "META_MODEL_API_KEY not set"}

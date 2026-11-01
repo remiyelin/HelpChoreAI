@@ -1,0 +1,40 @@
+{
+ "sensitivity_old12": {
+  "local_rules": {
+   "rate": 0.5,
+   "n": 12,
+   "hits": 6
+  },
+  "spark_open": {
+   "rate": 0.833,
+   "n": 12,
+   "hits": 10
+  }
+ },
+ "sensitivity_paraphrase12": {
+  "local_rules": {
+   "rate": 0.0,
+   "n": 12,
+   "hits": 0
+  },
+  "spark_open": {
+   "rate": 1.0,
+   "n": 12,
+   "hits": 12
+  }
+ },
+ "specificity_clean12": {
+  "local_rules": {
+   "rate": 1.0,
+   "n": 12,
+   "hits": 12
+  },
+  "spark_open": {
+   "rate": 0.833,
+   "n": 12,
+   "hits": 10
+  }
+ },
+ "local_rules": "checker.audit_report",
+ "spark_open": "meta_api.baseten_audit verdict"
+}
