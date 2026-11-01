@@ -69,11 +69,33 @@ All code in this repository was written during the event. First commit: 28 Octob
 - Third party: the Reichel et al. 2022 dataset and its tracker outputs, and the published papers we read.
 - Ours: from 16 to 25 October we read papers, planned the work and explored the public dataset. Those notes, templates and scripts are not in this repository, and no file in it is identical to any of them.
 
+## Try it on your own table
+
+Any lab can run the same rule on its own run table. One command, no model, no key, nothing leaves your computer:
+
+```bash
+uv run python tools/audit_table.py examples/synthetic_other_lab.csv
+```
+
+Use one row per run:
+
+| Column | Meaning |
+|---|---|
+| `subject` | A code, never a name |
+| `visit`, `visit_order` | Visit label, and a number that orders the visits |
+| `run` | Run id inside the visit |
+| `marked`, `rated`, `total` | Items with the marker, items that could be read, items seen |
+| `disturbance` | A positive number that may disturb the measurement, such as flow or waiting time. Put 1 in every row if nothing was recorded |
+
+It returns each visit pair with the normal reading, the corrected change, the normal wobble and the decision, plus the smallest change this protocol can call and an estimate of the runs needed.
+
+`tests/test_audit_table.py` checks that it repeats all 32 decisions on this project's real tables. It also recovers what was planted in the synthetic table, made by `examples/make_synthetic_table.py`: a real rise, a false alarm from samples that waited too long, and a bad recording. The example file is made-up data.
+
 ## Where else this could work
 
 Built for one rare disease. The method fits any lab that measures the same sample many times, records what might disturb the measurement, and compares visits. Candidates: other blood cell shape tests, stored blood quality, imaging flow cytometry, manual cell counts.
 
-None of these has been tested. The −0.32 slope belongs to this device and this label. Each new setting needs its own calibration.
+None of these has been tested on real data. The −0.32 slope belongs to this device and this label. Each new setting needs its own calibration.
 
 ## Limits
 

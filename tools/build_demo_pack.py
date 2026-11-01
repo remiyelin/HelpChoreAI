@@ -9,12 +9,13 @@ from pathlib import Path
 os.environ["PUBLIC_MODE"] = "1"
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "tools"))
 import cv2
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from PIL import Image
-import checker, geometry, meta_api, server
+import audit_table, checker, geometry, meta_api, server
 from sam_pilot import box_prompt, pick_mask, shape_stats
 from step3b_pixel_model import decode_gray_png
 
@@ -233,6 +234,11 @@ def open_pack():
     write("open.json", {"parity": parity, "hosts": hosts})
 
 
+def example_pack():
+    pairs, _v, info = audit_table.audit(audit_table.load(ROOT / "examples" / "synthetic_other_lab.csv"))
+    write("example.json", {"synthetic": True, "info": info, "pairs": pairs.to_dict("records")})
+
+
 def tool_counts():
     c = collections.Counter()
     for p in meta_api.CACHE.glob("*.json"):
@@ -270,7 +276,7 @@ def main():
     write("flow.json", flow_table())
     write("predictions.json", PREDICTIONS)
     write("headline.json", {k: headline[k] for k in ("naive_binomial_vs_frozen", "pooled_log_flow_slope", "within_visit_negative_slope", "rcv95", "author_contour_solidity")})
-    cells_pack(); reports_pack(); open_pack(); tool_counts(); channel_pack()
+    cells_pack(); reports_pack(); open_pack(); example_pack(); tool_counts(); channel_pack()
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     write("meta.json", {"commit": commit, "built": time.strftime("%Y-%m-%d")})
     size = sum(p.stat().st_size for p in OUT.rglob("*") if p.is_file())

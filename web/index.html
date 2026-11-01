@@ -208,7 +208,15 @@
 
   <section>
     <h3>Where else this could work</h3>
-    <p class="note">Built for one rare disease. The method fits any lab that measures the same sample many times, records what might disturb the measurement, and compares visits. Candidates: other blood cell shape tests, stored blood quality, imaging flow cytometry, manual cell counts. None of these has been tested yet. Each one needs its own calibration.</p>
+    <p class="note">Built for one rare disease. The method fits any lab that measures the same sample many times, records what might disturb the measurement, and compares visits. Candidates: other blood cell shape tests, stored blood quality, imaging flow cytometry, manual cell counts. None of these has been tested on real data yet. Each one needs its own calibration.</p>
+  </section>
+
+  <section>
+    <h3>Try it on your own table</h3>
+    <p class="note">Any lab can run the same rule on its own run table. One command, no model, no key. On our data it repeats all 32 decisions exactly.</p>
+    <pre class="cmd"><code>uv run python tools/audit_table.py your_table.csv</code></pre>
+    <p class="note" id="exampleNote"></p>
+    <div class="tablewrap"><table id="exampleTable" class="data"></table></div>
   </section>
 
   <section>

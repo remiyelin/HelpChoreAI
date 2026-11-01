@@ -385,6 +385,15 @@ function methodView() {
     `With this protocol, changes under about ${(D.headline.rcv95.median * 100).toFixed(0)} points cannot be called. Power is 31% at 5 points and 77% at 10 points.`,
     `The lab's label pools two kinds of spiky cell.`, `Why speed changes the reading is not measured here. Only that it does.`,
     `This does not diagnose or treat. Whether red cell shape tracks the disease in the brain is unknown.`].forEach((x) => el("li", {}, $("#limits"), x));
+  const ex = D.example;
+  $("#exampleNote").textContent = `Example with made-up data and a known answer: a real rise at S1 visit 3, a false alarm at S2 visit 3 from samples that waited too long, a bad recording at S2 visit 4. The tool recovered the disturbance slope (${ex.info.slope.toFixed(2)}, planted -0.32).`;
+  const et = $("#exampleTable"), eh = el("tr", {}, el("thead", {}, et));
+  ["Pair (synthetic)", "Normal reading", "Corrected", "Wobble", "Decision"].forEach((h) => el("th", { scope: "col" }, eh, h));
+  const eb = el("tbody", {}, et);
+  ex.pairs.forEach((p) => {
+    const r = el("tr", {}, eb);
+    [`${p.subject} ${p.from} to ${p.to}`, `${pts(p.normal_change)} ${p.normal_says}`, pts(p.corrected_change), (p.wobble * 100).toFixed(1), p.meaning].forEach((x) => el("td", {}, r, x));
+  });
   const pt = $("#pairsTable"), ph = el("tr", {}, el("thead", {}, pt));
   ["Pair", "Group", "Raw", "Corrected", "Wobble", "Normal band", "Normal says", "Decision"].forEach((h) => el("th", { scope: "col" }, ph, h));
   const pb = el("tbody", {}, pt), words = { exceeds_RCV: "bigger than wobble", within_RCV: "inside wobble", indeterminate_QC: "no decision" };
@@ -443,10 +452,10 @@ function route() {
 }
 async function boot() {
   try {
-    const [pairs, visits, headline, flow, predictions, open, tools, meta, cells, reportIndex, rules, pin] = await Promise.all(
-      ["pairs", "visits", "headline", "flow", "predictions", "open", "tools", "meta", "cells/index", "reports/index", "rules"].map((f) => getJSON(`demo/${f}.json`))
+    const [pairs, visits, headline, flow, predictions, open, tools, meta, example, cells, reportIndex, rules, pin] = await Promise.all(
+      ["pairs", "visits", "headline", "flow", "predictions", "open", "tools", "meta", "example", "cells/index", "reports/index", "rules"].map((f) => getJSON(`demo/${f}.json`))
         .concat(fetch("demo/public_key.hex").then((r) => r.text())));
-    Object.assign(D, { pairs, visits, headline, flow, predictions, open, tools, meta, cells, reportIndex, rules, pin });
+    Object.assign(D, { pairs, visits, headline, flow, predictions, open, tools, meta, example, cells, reportIndex, rules, pin });
   } catch (e) {
     $("#main").textContent = `The demo data did not load (${e.message}). Reload the page.`; return;
   }

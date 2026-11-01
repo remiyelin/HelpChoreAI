@@ -149,6 +149,7 @@ textarea{width:100%;background:var(--panel);border:1px solid var(--line);border-
 .planner{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
 .planner label{display:grid;gap:5px;color:var(--muted);font-size:14px}
 details summary{cursor:pointer;color:var(--ink)}
+.cmd{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin:10px 0;overflow-x:auto;font:400 14px/1.4 var(--data)}
 
 .tip{position:fixed;z-index:40;pointer-events:none;background:var(--ink);color:var(--bg);font:400 13px/1.4 var(--data);padding:6px 9px;border-radius:5px;max-width:240px}
 
