@@ -172,8 +172,13 @@ Measured under the frozen §6 ranges and the same code
   Cloud `muse-spark-1.3` (80 cells, 40/40 by author label): AC1 0.518
   (frozen 0.10–0.65 — in range), PABAK 0.454 (0.05–0.60 — in range),
   cannot_tell 0.175 (0.30–0.55 — **below range**). Open-weight
-  `muse-spark-open`: all 80 calls BLOCKED (Baseten HTTP 402), so the
-  open-weight and head-to-head predictions are UNMEASURED, not met.
+  `muse-spark-open` (measured in the P-23 follow-up after an initial
+  Baseten HTTP 402 block; 80/80 OK): AC1 0.576 (frozen 0.20–0.70 — in
+  range), PABAK 0.570 (0.20–0.65 — in range), cannot_tell 0.013
+  (0.15–0.40 — **below range**). Head-to-head cloud vs open-weight:
+  AC1 0.749 on 65 both-rated cells (frozen 0.55–0.90 — in range).
+  Every agreement metric is in range; both cannot_tell rates are
+  below their frozen ranges, so the joint prediction stays NOT MET.
 - **(e) SAM 3.1 spicule concavity — NOT MET.** On 180 holdout cells:
   mean solidity health=1 0.9429 vs health=0 0.9454 (difference −0.0025;
   frozen −0.005…−0.025 — direction right, magnitude below range);

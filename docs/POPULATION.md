@@ -73,11 +73,16 @@ labels). Sealed kept-cell population: 1,026 cells.
 stratify, never sent).** Spark: AC1 0.518 [0.291, 0.721] — inside the
 frozen 0.10–0.65 range; PABAK 0.454 [0.212, 0.666] — inside 0.05–0.60;
 cannot_tell 0.175 [0.10, 0.263] — **below** the frozen 0.30–0.55 range.
-Spark Open: all 80 calls BLOCKED (Baseten HTTP 402, payment required);
-no open-weight or head-to-head number exists. Verdict appended to the
-PREREGISTRATION scorecard: **(d) NOT MET as a joint prediction**
-(cloud AC1/PABAK in range, cloud cannot_tell out of range, open-weight
-unmeasured).
+Spark Open (initially BLOCKED by Baseten HTTP 402; measured in the
+P-23 follow-up once billing was active, 80 new Baseten calls, 80/80 OK,
+Spark table untouched): AC1 0.576 [0.393, 0.749] — inside the frozen
+0.20–0.70 range; PABAK 0.570 [0.391, 0.746] — inside 0.20–0.65;
+cannot_tell 0.013 [0.00, 0.037] — **below** the frozen 0.15–0.40 range.
+Head-to-head (65 both-rated cells): AC1 0.749 [0.579, 0.891] — inside
+the frozen 0.55–0.90 range; kappa 0.602, PABAK 0.692. Verdict on the
+PREREGISTRATION scorecard: **(d) NOT MET as a joint prediction** —
+every agreement metric is in range for both raters and head-to-head,
+but both raters say `cannot_tell` far less often than frozen.
 
 **(e) SAM concavity, 180 holdout cells** (seed sample of the sealed kept
 cells; sized under the 400 cap so the cumulative Meta estimate stays
@@ -129,6 +134,8 @@ had already returned; nothing further was called). Baseten: 101
 served calls in Part B. In Part C every open-weight attempt was then
 refused with HTTP 402 before service (160 attempts, 0 served); the
 200-call cap was therefore never reached in served calls, but the
-attempts are reported here rather than hidden. Ledger file
+attempts are reported here rather than hidden. The P-23 follow-up
+later measured that sealed open-weight set with 80 further served
+Baseten calls once billing was active (0 new Meta calls). Ledger file
 `logs/agent_ledger.json` is unchanged ($1.26 / 63), as before: these
 evaluation calls do not charge the agent ledger.
