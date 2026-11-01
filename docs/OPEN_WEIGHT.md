@@ -61,4 +61,10 @@ Each step writes to the cache, so a repeat costs nothing. Each step stops at 80 
 
 All three are fixed. The first audit files also described open-run text instead of the committed reports, so they were deleted and the audit was repeated.
 
+## Result after the fixes, Baseten, 1 November 2026
+
+- 21 of 21 open-weight reports verify and carry the same payload hash as the cloud run.
+- Spark Open passed all 21 committed reports.
+- Tamper benchmark on 36 reports: Spark Open stopped 12 of 12 tampered and 12 of 12 with advice in normal words, and passed 12 of 12 clean. Fixed rules: 6, 0 and 12.
+
 Earlier benchmark on Baseten, before the auditor prompt fix: Spark Open stopped 12 of 12 paraphrased advice reports (local rules 0 of 12) and passed 10 of 12 clean reports (`logs/tamper_benchmark_open.json`).

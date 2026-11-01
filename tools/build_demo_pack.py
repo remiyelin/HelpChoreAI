@@ -231,7 +231,11 @@ def open_pack():
             hosts.append({"host": "baseten", "model": "meta-models/muse-spark-open", "version": "earlier auditor prompt",
                           "local": {"tampered12": j["sensitivity_old12"]["local_rules"], "paraphrase12": j["sensitivity_paraphrase12"]["local_rules"], "clean12": j["specificity_clean12"]["local_rules"]},
                           "open": {"tampered12": j["sensitivity_old12"]["spark_open"], "paraphrase12": j["sensitivity_paraphrase12"]["spark_open"], "clean12": j["specificity_clean12"]["spark_open"]}})
-    write("open.json", {"parity": parity, "hosts": hosts})
+    if any(h["version"] == "current" for h in hosts):
+        hosts = [h for h in hosts if h["version"] == "current"]
+    summary = lambda f: json.loads((T / f).read_text(encoding="utf-8"))
+    hard = pd.read_csv(T / "claim_check_hard.csv")[["decision", "sentence", "want", "word_list", "spark_open"]].to_dict("records")
+    write("open.json", {"parity": parity, "hosts": hosts, "reader": summary("open_reader_summary.json"), "claims": summary("claim_check_summary.json"), "claims_hard": hard})
 
 
 def example_pack():

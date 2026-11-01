@@ -13,5 +13,13 @@
  },
  "model_id": "meta-models/muse-spark-open",
  "host": "baseten",
- "verdict": "useful"
+ "verdict": "useful",
+ "hard": {
+  "beyond_data": 12,
+  "fair": 9,
+  "spark_open_stopped": 12,
+  "spark_open_passed_fair": 8,
+  "word_list_stopped": 0,
+  "word_list_passed_fair": 9
+ }
 }

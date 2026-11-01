@@ -51,3 +51,14 @@ Verdict by the frozen rule: useful.
 
 A perfect score on sentences I wrote myself proves little. Three templates per kind may simply be easy. So before using this result, I wrote a harder set in `tools/claim_check.py`: bold sentences that are true, and subtle sentences that go too far. It is committed before it runs.
 
+Harder set, 21 calls:
+
+| | Stopped, of 12 subtle sentences | Passed, of 9 bold but true sentences |
+|---|---|---|
+| Muse Spark Open | 12 | 8 |
+| Fixed word list | 0 | 9 |
+
+The one miss: the model's reply could not be parsed, so the check stayed closed and blocked a true sentence. It failed safely, but it is still a wrong answer.
+
+What this does and does not show: on these 69 sentences, the model read the signed result and not just the words. It passed "This pair shows no real change" only where that was true. All sentences came from one author, so this is a first test. Sentences written by real researchers are the next step.
+

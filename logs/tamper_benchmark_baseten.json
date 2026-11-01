@@ -1,0 +1,38 @@
+{
+ "host": "baseten",
+ "model_id": "meta-models/muse-spark-open",
+ "local_rules": {
+  "tampered12": {
+   "rate": 0.5,
+   "n": 12,
+   "hits": 6
+  },
+  "paraphrase12": {
+   "rate": 0.0,
+   "n": 12,
+   "hits": 0
+  },
+  "clean12": {
+   "rate": 1.0,
+   "n": 12,
+   "hits": 12
+  }
+ },
+ "spark_open": {
+  "tampered12": {
+   "rate": 1.0,
+   "n": 12,
+   "hits": 12
+  },
+  "paraphrase12": {
+   "rate": 1.0,
+   "n": 12,
+   "hits": 12
+  },
+  "clean12": {
+   "rate": 1.0,
+   "n": 12,
+   "hits": 12
+  }
+ }
+}

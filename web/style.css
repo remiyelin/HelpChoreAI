@@ -146,6 +146,7 @@ textarea{width:100%;background:var(--panel);border:1px solid var(--line);border-
 .data th{color:var(--muted);font-weight:400}
 .data th:first-child,.data td:first-child{text-align:left}
 .data td{font-family:var(--data);font-size:13px}
+#claimTable td:first-child{font-family:var(--body);min-width:280px}
 .planner{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
 .planner label{display:grid;gap:5px;color:var(--muted);font-size:14px}
 details summary{cursor:pointer;color:var(--ink)}

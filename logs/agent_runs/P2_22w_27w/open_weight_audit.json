@@ -1,0 +1,10 @@
+{
+ "pair": "P2_22w_27w",
+ "verdict": "PASS",
+ "reasons": [],
+ "model_id": "meta-models/muse-spark-open",
+ "host": "baseten",
+ "status": "PASS",
+ "cache": "miss",
+ "report_sha256": "dbb7c84543ce747e4a972fb3a86c5decf4d6bec28eaf296a4892b705861c28f7"
+}

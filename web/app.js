@@ -367,7 +367,17 @@ function methodView() {
   });
   [`SAM shape added little to the classifier: agreement 0.24 to 0.28 on all cells, and none on sealed patients.`,
     `AI raters agreed only weakly with the human on 100 random cells (AC1 0.35 for Spark, 0.25 for Spark Open).`,
+    `Muse Spark Open as a cell reader. It read all ${D.open.reader.cells_read.toLocaleString("en-US")} cells, but its visit share did not follow the human one (correlation ${D.open.reader.within_patient_spearman.toFixed(2)}, error ${Math.round(D.open.reader.calibrated_mae_points)} points). By a rule frozen before the run, it does not read cells here.`,
     `One of five predictions held fully.`].forEach((t) => el("li", {}, $("#notWorked"), t));
+  const cl = D.open.claims, said = { exceeds_RCV: "bigger than wobble", within_RCV: "inside wobble", indeterminate_QC: "no decision" };
+  $("#claimNote").textContent = `A study can overstate a result without changing a number. Muse Spark Open stopped ${cl.spark_open_stopped} of ${cl.beyond_data} sentences that said more than the signed result and passed ${cl.spark_open_passed_fair} of ${cl.fair} fair ones. A fixed word list stopped ${cl.word_list_stopped}. On a harder set it stopped ${cl.hard.spark_open_stopped} of ${cl.hard.beyond_data} and passed ${cl.hard.spark_open_passed_fair} of ${cl.hard.fair}; the word list stopped ${cl.hard.word_list_stopped}. We wrote these sentences ourselves, so this is a first test.`;
+  const ct = $("#claimTable"), ch = el("tr", {}, el("thead", {}, ct));
+  ["Sentence", "Signed result", "Right answer", "Word list", "Spark Open"].forEach((h) => el("th", { scope: "col" }, ch, h));
+  const cb = el("tbody", {}, ct);
+  D.open.claims_hard.forEach((c) => {
+    const r = el("tr", {}, cb);
+    [c.sentence, said[c.decision], c.want, c.word_list, c.spark_open].forEach((x) => el("td", {}, r, x));
+  });
   const par = D.open.parity.filter((r) => r.equal === true || r.equal === "True");
   $("#parityNote").textContent = D.open.parity.length
     ? `${par.length} of ${D.open.parity.length} reports signed by the open model have the same numbers as the cloud run. The numbers come from code, so the model can be swapped.`

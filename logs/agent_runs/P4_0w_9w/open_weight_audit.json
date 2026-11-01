@@ -1,0 +1,10 @@
+{
+ "pair": "P4_0w_9w",
+ "verdict": "PASS",
+ "reasons": [],
+ "model_id": "meta-models/muse-spark-open",
+ "host": "baseten",
+ "status": "PASS",
+ "cache": "miss",
+ "report_sha256": "59c27ec27f2b937672dbba1745bcb02ba490229d3db9e93ea38ee3cccb0f375c"
+}

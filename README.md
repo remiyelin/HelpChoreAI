@@ -38,15 +38,20 @@ Data: Reichel et al. 2022, five patients. Three were used to build the method (d
 | The tracker stores outlines that cannot show spikes | 2,673 of 2,673 cells fully convex | dev |
 | Signed reports that verify on a fresh clone | 21 of 21 | dev |
 | Tool checks stop wrong reports, scripted model | 9 signed with checks off, 0 with checks on | dev |
+| Sentences that say more than the signed result | Muse Spark Open stopped 36 of 36 and passed 12 of 12 fair ones. A fixed word list stopped 3 | dev, sentences we wrote |
+| Harder sentences | Muse Spark Open stopped 12 of 12 and passed 8 of 9 fair ones. The word list stopped 0 | dev, sentences we wrote |
 
 <!--open-result-->
-Open weights: 16 of 21 reports signed in open-weight mode carry the same numbers as the cloud run.
+Open weights: 21 of 21 reports signed in open-weight mode carry the same numbers as the cloud run.
+
+On baseten: advice hidden in normal words stopped 12 of 12 (fixed rules 0 of 12); clean reports passed 12 of 12.
 <!--/open-result-->
 
 ## What did not work
 
 - SAM shape gave little classifier gain on all cells (kappa 0.237 to 0.280) and none on sealed patients (0.033 to −0.052, 180 cells). An early gain of 0.28 to 0.37 existed only on a hard, selected subset.
 - AI raters agree only weakly with the human on 100 random cells (AC1 0.345 for Muse Spark 1.3, 0.247 for Muse Spark Open).
+- Muse Spark Open as a cell reader. It read all 1,944 cells for about $6, but its visit share did not follow the human one (within-patient correlation 0.29, error 12 points; limits fixed in advance were 0.5 and 8). So it does not read cells here. See [docs/OPEN_READER.md](docs/OPEN_READER.md).
 - In video mode SAM kept cells in view, but spiky and smooth cells were no longer different in shape. So we track on video and measure on single frames.
 - Five predictions were frozen before unsealing. One held fully, four missed at least in part. See the scorecards in [PREREGISTRATION.md](PREREGISTRATION.md) and [docs/POPULATION.md](docs/POPULATION.md).
 
@@ -56,7 +61,7 @@ Open weights: 16 of 21 reports signed in open-weight mode carry the same numbers
 |---|---|
 | SAM 3.1 | Draws the real cell edge from a box prompt (about 2,200 cached calls). Video tracking, with a position gate for identity lag |
 | Muse Spark 1.3 | Audit agent with tool calling; second rater with an enforced schema (about 335 cached calls, plus agent turns) |
-| Muse Spark Open | Open-weight rater, agent and language auditor, through OpenAI-compatible hosts (about 470 cached calls). See [docs/OPEN_WEIGHT.md](docs/OPEN_WEIGHT.md) |
+| Muse Spark Open | Open-weight agent, report auditor and claim checker, through OpenAI-compatible hosts (about 2,500 cached calls). Tested as a cell reader and rejected. See [docs/OPEN_WEIGHT.md](docs/OPEN_WEIGHT.md) and [docs/CLAIM_CHECK.md](docs/CLAIM_CHECK.md) |
 | Muse Voice Transcribe | Hands-free review notes in the local tool |
 | Muse Code | Wrote most of this repository |
 
