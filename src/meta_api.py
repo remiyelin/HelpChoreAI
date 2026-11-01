@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Real cached model calls. Cache: data/api_cache/<sha256-of-canonical-request>.json — repeat clicks are free.
 Meta Model API: OpenAI-compatible https://api.meta.ai/v1/chat/completions, Bearer META_MODEL_API_KEY (or MODEL_API_KEY).
-Baseten: https://inference.baseten.co/v1/chat/completions, Bearer BASETEN_API_KEY, model meta-models/muse-spark-open-1026.
+Open weights: any OpenAI-compatible host. Default Baseten (BASETEN_API_KEY, model meta-models/muse-spark-open);
+OPEN_BASE_URL, OPEN_API_KEY and OPEN_MODEL point the same code at Modal, Fireworks or your own server.
 Every failure returns BLOCKED with the real error — never a fabricated PASS.
 """
 import base64, hashlib, json, os, re, urllib.request, urllib.error
@@ -13,6 +14,15 @@ ROOT = Path(__file__).resolve().parent.parent
 CACHE = ROOT / "data" / "api_cache"
 META_BASE = os.environ.get("META_API_BASE", "https://api.meta.ai/v1")
 BASETEN_URL = os.environ.get("BASETEN_API_URL", "https://inference.baseten.co/v1/chat/completions")
+OPEN_URL = os.environ.get("OPEN_BASE_URL", "").rstrip("/")
+if OPEN_URL: BASETEN_URL = OPEN_URL + "/chat/completions"
+
+def _open_key():
+    return os.environ.get("OPEN_API_KEY") or os.environ.get("BASETEN_API_KEY")
+
+def _open_extra():
+    effort = os.environ.get("OPEN_REASONING_EFFORT")  # reasoning tokens bill as output; Baseten defaults to xhigh
+    return {"reasoning_effort": effort} if effort else {}
 
 def _key(model, messages, extra=""):
     canon = json.dumps({"model": model, "messages": messages, "extra": extra}, sort_keys=True).encode()
@@ -48,8 +58,9 @@ def chat_cached(base_url, api_key, model, messages, extra=""):
     if not api_key:
         return {"status": "BLOCKED", "detail": "API key not set", "_cache": "miss"}
     try:
-        resp = _post(base_url.rstrip("/") + "/chat/completions", api_key,
-                     {"model": model, "messages": messages})
+        body = {"model": model, "messages": messages}
+        if "api.meta.ai" not in str(base_url): body |= _open_extra()
+        resp = _post(base_url.rstrip("/") + "/chat/completions", api_key, body)
         text = resp.get("choices", [{}])[0].get("message", {}).get("content", "")
         out = {"status": "OK", "model": model, "text": text, "raw_id": resp.get("id")}
     except Exception as e:
@@ -300,7 +311,7 @@ def baseten_rater(png_list, repeat=0):
     in Python, retries once on invalid JSON, then falls back to null (BLOCKED) — never fabricates.
     Cached by image hashes + repeat in data/api_cache/ like every paid call."""
     load_env()
-    key = os.environ.get("BASETEN_API_KEY")
+    key = _open_key()
     hashes = [hashlib.sha256(p).hexdigest() for p in png_list]
     CACHE.mkdir(parents=True, exist_ok=True)
     ck = _key("muse-spark-open-rater", [{"imgs": hashes, "repeat": repeat, "prompt": RATER_PROMPT}], extra="rater-open-v1")
@@ -335,15 +346,15 @@ def baseten_rater(png_list, repeat=0):
             last_err = f"{type(e).__name__}: {e}"
     return {"status": "BLOCKED", "detail": last_err, "rater": None, "_cache": "miss", "_new_calls": 2}
 
-BASETEN_MODEL = "meta-models/muse-spark-open"
+BASETEN_MODEL = os.environ.get("OPEN_MODEL", "meta-models/muse-spark-open")
 
 
 def baseten_models():
     """GET /v1/models on the Baseten endpoint (cached in data/api_cache). Returns served ids."""
     load_env()
-    key = os.environ.get("BASETEN_API_KEY")
+    key = _open_key()
     CACHE.mkdir(parents=True, exist_ok=True)
-    hit = CACHE / "baseten_models.json"
+    hit = CACHE / ("baseten_models.json" if not OPEN_URL else f"models_{hashlib.sha256(OPEN_URL.encode()).hexdigest()[:12]}.json")
     if hit.exists():
         out = json.loads(hit.read_text()); out["_cache"] = "hit"; return out
     if not key:
@@ -363,7 +374,7 @@ def baseten_models():
 def baseten_chat(messages, model=None, extra="baseten-chat-v1"):
     """One cached Baseten chat completion. Returns {status, model, text, _cache}."""
     model = model or BASETEN_MODEL
-    return chat_cached(BASETEN_URL.rsplit("/chat/completions", 1)[0], os.environ.get("BASETEN_API_KEY"),
+    return chat_cached(BASETEN_URL.rsplit("/chat/completions", 1)[0], _open_key(),
                        model, messages, extra=extra)
 
 
@@ -384,7 +395,7 @@ def baseten_agent_chat(messages, tools, model=None):
     refusal message. Returns the assistant message dict."""
     load_env()
     model = model or BASETEN_MODEL
-    key = os.environ.get("BASETEN_API_KEY")
+    key = _open_key()
     CACHE.mkdir(parents=True, exist_ok=True)
     ck = _key(model + "-agent-baseten", [{"messages": messages, "tools": tools}], extra="agent-open-v1")
     hit = CACHE / f"{ck}.json"
@@ -393,7 +404,7 @@ def baseten_agent_chat(messages, tools, model=None):
     if not key:
         raise RuntimeError("BLOCKED: BASETEN_API_KEY not set")
     body = {"model": model, "messages": messages, "tools": tools,
-            "tool_choice": "auto", "parallel_tool_calls": False}
+            "tool_choice": "auto", "parallel_tool_calls": False} | _open_extra()
     last = None
     for _attempt in range(2):
         resp = _post(BASETEN_URL, key, body, timeout=180)
@@ -641,16 +652,20 @@ def _parse_baseten_verdict(text):
     return obj["verdict"], [str(r) for r in reasons]
 
 def baseten_audit(report, payload):
-    key = os.environ.get("BASETEN_API_KEY")
+    key = _open_key()
     prompt = ("You are a compliance auditor. Check this research report against its payload. "
-              "Flag clinical-advice language, disease-progression claims, patient identifiers, or any number "
-              "not present in the payload (including spelled-out numbers). "
+              "Never flag these fixed template items: the pseudonymous patient code P1 to P5, week labels such as 8w, "
+              "the dataset citation and its year, the licence name and version, the DOI, the disclaimer text, "
+              "and any number that appears in the payload. "
+              "Flag clinical advice, claims about disease state, disease progression or treatment effect, "
+              "real patient identifiers such as names, hospital numbers or doctors, and any other number, "
+              "including spelled-out numbers. "
               'Reply with strict JSON only: {"verdict": "PASS"|"BLOCK", "reasons": [...]}. '
               'Use "PASS" only if there are no flags; otherwise use "BLOCK".\nPAYLOAD: '
               + json.dumps(payload) + "\nREPORT:\n" + report)
-    # Baseten serves meta-models/muse-spark-open; the -1026 ID 404s. Served model first.
+    # Baseten serves meta-models/muse-spark-open; the -1026 ID 404s. Served model first. Other hosts: OPEN_MODEL only.
     r = {"status": "BLOCKED", "detail": "API key not set", "_cache": "miss"}
-    for model in ["meta-models/muse-spark-open", "meta-models/muse-spark-open-1026"]:
+    for model in ([BASETEN_MODEL] if os.environ.get("OPEN_MODEL") else ["meta-models/muse-spark-open", "meta-models/muse-spark-open-1026"]):
         r = chat_cached(BASETEN_URL.rsplit("/chat/completions", 1)[0], key, model,
                         [{"role": "user", "content": prompt}])
         if r.get("status") == "OK":

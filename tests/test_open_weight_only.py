@@ -31,6 +31,7 @@ def test_meta_chat_rater_voice_blocked_before_network(open_only):
 
 
 def test_baseten_path_not_blocked(open_only, monkeypatch):
+    monkeypatch.setenv("BASETEN_API_KEY", "test-key")
     monkeypatch.setattr(meta_api, "_post", lambda url, key, body, timeout=60: {
         "id": "x", "model": "meta-models/muse-spark-open",
         "choices": [{"message": {"role": "assistant", "content": "ok"}}]})

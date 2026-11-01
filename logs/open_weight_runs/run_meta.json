@@ -1,0 +1,114 @@
+{
+ "P1_0w_2w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "8",
+  "seconds": "16.34",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ },
+ "P1_20w_24w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "8",
+  "seconds": "13.17",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ },
+ "P1_24w_29w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "8",
+  "seconds": "16.61",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ },
+ "P1_2w_4w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "5",
+  "seconds": "8.64",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ },
+ "P1_4w_6w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "7",
+  "seconds": "20.08",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ },
+ "P1_6w_8w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "4",
+  "seconds": "18.13",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ },
+ "P1_8w_10w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "6",
+  "seconds": "12.34",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ },
+ "P2_0w_2w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "5",
+  "seconds": "8.36",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ },
+ "P2_12w_18w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "4",
+  "seconds": "9.44",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ },
+ "P2_27w_51w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "7",
+  "seconds": "27.32",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ },
+ "P2_2w_4w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "6",
+  "seconds": "10.44",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ },
+ "P2_4w_6w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "3",
+  "seconds": "10.17",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ },
+ "P2_6w_8w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "5",
+  "seconds": "12.1",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ },
+ "P2_8w_12w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "3",
+  "seconds": "9.36",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ },
+ "P4_0w_9w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "5",
+  "seconds": "17.91",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ },
+ "P4_9w_18w": {
+  "status": "AWAITING_SIGNOFF",
+  "tool_calls": "4",
+  "seconds": "15.11",
+  "model_id": "meta-models/muse-spark-open",
+  "host": "baseten"
+ }
+}

@@ -17,7 +17,7 @@ load_env()
 ROOT = Path(__file__).resolve().parent.parent
 LOGS = ROOT / "logs"
 MODEL = "muse-spark-1.3"
-MAX_TOOL_CALLS = 8
+MAX_TOOL_CALLS = 12
 COST_PER_MODEL_CALL_USD = 0.02  # conservative ledger estimate per cached-miss model call
 BUDGET_USD = 3.00
 
@@ -136,7 +136,7 @@ def run_pair(patient, from_visit, to_visit, model_fn=None, ledger=None, max_tool
         if not calls:
             messages.append({"role": "user", "content": "Continue toward the goal: produce the signed report, or explain why no decision can be made."})
             continue
-        for call in calls[:1]:  # parallel_tool_calls is off; handle one at a time
+        for call in calls:  # some endpoints return several calls even with parallel_tool_calls off
             tool_calls += 1
             fn = (call.get("function") or {})
             name = fn.get("name") or call.get("name")
@@ -147,8 +147,12 @@ def run_pair(patient, from_visit, to_visit, model_fn=None, ledger=None, max_tool
             out = agent_tools.call_tool(name, args)
             tools_used.append(name)
             _log(run_id, "tool", {"tool": name, "input": args, "output": out})
+            left = max_tool_calls - tool_calls
+            visible = out | {"tool_budget_left": left}
+            if left <= 3 and name != "render_and_sign":
+                visible["budget_note"] = "Few tool calls are left. If you have what you need, finish the report now."
             messages.append({"role": "tool", "tool_call_id": call.get("id", name), "name": name,
-                             "content": json.dumps(out)})
+                             "content": json.dumps(visible)})
             status = out.get("status", "")
             if status.startswith("REFUSED") or status.startswith("REJECTED"):
                 refusals += 1
