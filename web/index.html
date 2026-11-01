@@ -1,72 +1,235 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HelpChoreAI — RBC Protocol-Variance Auditor</title><link rel="stylesheet" href="/style.css"></head>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HelpChoreAI: is this change real?</title>
+<meta name="description" content="A quality check for medical research measurements. Before anyone trusts a change, it asks if the change is real, noise, or a bad recording.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
 <body>
-<header>
-  <div><h1>HelpChoreAI</h1><p class="sub">Biophysical measurement &amp; protocol-variance auditing — microfluidic RBC recordings, VPS13A research</p></div>
-  <div id="liveBadges" class="badges"></div>
+<a class="skip" href="#main">Skip to content</a>
+
+<figure class="channel">
+  <img id="channelImg" src="demo/channel.webp" width="1280" height="48" alt="Real microscope recording: red blood cells moving through a narrow channel.">
+  <figcaption>Real recording, slowed down. Red cells crossing a narrow channel.</figcaption>
+</figure>
+
+<header class="bar">
+  <a class="mark" href="#decision">HelpChoreAI</a>
+  <nav aria-label="Views">
+    <a href="#decision">Decision</a>
+    <a href="#cells">Cells</a>
+    <a href="#report">Signed report</a>
+    <a href="#method">Method</a>
+  </nav>
+  <p class="ruo">Research use only, not medical advice</p>
 </header>
-<p class="notice">Research use only. RBC morphology is a peripheral target-engagement marker, not a measure of CNS progression. Dataset: Reichel et al. 2022, Figshare Collection 5793482 (CC BY 4.0). Every result requires qualified-researcher review in the overlay.</p>
-<nav>
-  <button data-view="setup">1 · Visit-Pair Setup</button>
-  <button data-view="overlay">2 · Per-Cell Overlay Review</button>
-  <button data-view="decision" class="active">3 · RCV Decision</button>
-  <button data-view="report">4 · Verified Report</button>
-</nav>
-<main>
-<section id="view-setup" hidden>
-  <h2>Visit-pair setup</h2>
-  <label>Patient <select id="selPatient"></select></label>
-  <label>From visit <select id="selFrom"></select></label>
-  <label>To visit <select id="selTo"></select></label>
-  <div id="pairContext" class="card"></div>
-  <h3>All visit pairs (flow-adjusted, RCV-filtered)</h3>
-  <div id="pairsTable"></div>
-  <div id="benchmarkCard" class="card">Live benchmark: loading…</div>
+
+<main id="main">
+
+<section id="view-decision" class="view">
+  <div class="hero">
+    <h1>Is this change real?</h1>
+    <p class="lede">A quality check for medical research measurements. Before anyone trusts a change, it asks if the change is real, noise, or a bad recording.</p>
+  </div>
+
+  <div class="case">
+    <figure class="plot">
+      <figcaption>One patient, nine visits. Share of spiky red cells.</figcaption>
+      <div id="heroChart" class="chart"></div>
+    </figure>
+    <aside class="verdict" aria-label="Decision for week 19 to week 26">
+      <p class="eyebrow">Week 19 to week 26</p>
+      <p class="answer amber">No decision</p>
+      <p>More than a third of the cells in this recording could not be read. The rule refuses to call it.</p>
+      <dl class="readings">
+        <div><dt>Normal reading</dt><dd class="red" id="heroNaive"></dd></div>
+        <div><dt>Corrected for speed</dt><dd id="heroAdj"></dd></div>
+      </dl>
+    </aside>
+  </div>
+
+  <section class="alarms" aria-labelledby="alarmsTitle">
+    <h2 id="alarmsTitle"></h2>
+    <p class="note">Each dot is one pair of visits that a normal reading calls a change. Pick one to see it below.</p>
+    <div id="alarmDots" class="dots"></div>
+  </section>
+
+  <section class="explorer" id="explorer" aria-labelledby="explorerTitle">
+    <div class="ex-copy">
+      <h2 id="explorerTitle">Speed changes the number</h2>
+      <p class="note">Faster cells look less spiky. It is like a scale that shows less when you step on it fast. Correcting for speed can remove a false alarm, or reveal a hidden change.</p>
+    </div>
+    <div class="controls">
+      <label>Visit pair <select id="pairSel"></select></label>
+      <div class="seg" role="group" aria-label="How to read the change">
+        <button type="button" id="modeNormal">Normal reading</button>
+        <button type="button" id="modeAdj">Corrected for speed</button>
+      </div>
+      <button type="button" class="ghost" id="pairNext">Next example</button>
+    </div>
+    <p class="reading" id="pairVerdict" aria-live="polite"></p>
+    <div id="bandChart" class="chart"></div>
+    <figure class="plot flat">
+      <figcaption id="flowCaption"></figcaption>
+      <div id="flowStrip" class="chart"></div>
+    </figure>
+  </section>
+  <p class="foot" id="heroFoot"></p>
 </section>
-<section id="view-overlay" hidden>
-  <h2>Per-cell overlay review — adjudication queue</h2>
-  <p>Classifier is triage only (contour roughness did not improve it). Low-confidence and disagreeing cells wait here for human labels. Your label is the second rater: κ / Gwet AC1 vs the author label update live.</p>
-  <div class="row"><div id="queueList" class="card scroll"></div>
-  <div class="card"><div class="imgwrap"><img id="stripImg" alt="microfluidic strip (real frame)"><svg id="stripSvg" viewBox="0 0 1280 48"><polygon id="stripPoly" points="" fill="none" stroke="#dc2626" stroke-width="2"/></svg></div>
-  <div class="imgwrap cropwrap"><img id="cropImg" alt="zoomed cell crop (real frame)"><svg id="cellSvg" viewBox="0 0 200 48"><polygon id="cellPoly" points="" fill="rgba(13,118,110,.18)" stroke="#0d766e" stroke-width="1.5"/></svg></div>
-  <p class="hint">Real grayscale frames extracted from <span class="mono">*_imaq.avi</span> via HTTP Range (961 verified real microfluidic cell frames extracted via HTTP Range across P1, P2, P4). Contour alone misses surface spicules — judge from the image, not the outline.</p>
-  <svg id="cellSvgBlank" viewBox="0 0 100 100" width="120" height="120" hidden><polygon id="cellPolyBlank" points=""/></svg>
-  <div id="cellInfo"></div>
-  <div><button id="btnHealthy">Rater: Healthy (0)</button> <button id="btnUnhealthy">Rater: Unhealthy (1)</button></div>
-  <div><button id="btnSam">Run SAM 3.1 (live, cached)</button> <button id="btnSpark">Muse Spark visual check</button></div>
-  <div id="samBox" class="card"></div>
-  <div id="kappaBox" class="card"></div></div></div>
+
+<section id="view-cells" class="view" hidden>
+  <div class="hero small">
+    <h2>Can the outline see the spikes?</h2>
+    <p class="lede" id="cellsLede"></p>
+  </div>
+  <div class="cellgrid">
+    <div>
+      <div class="stage" id="stage">
+        <img id="cellImg" alt="" width="64" height="48">
+        <svg id="cellSvg" aria-hidden="true"><polygon id="polyStored"></polygon><polygon id="polySam"></polygon></svg>
+      </div>
+      <p class="tiny">Microscope frame, enlarged. Contrast stretched for display.</p>
+      <div class="seg" role="group" aria-label="What to show on the cell">
+        <button type="button" data-step="0">Frame</button>
+        <button type="button" data-step="1">Stored outline</button>
+        <button type="button" data-step="2">SAM 3.1 outline</button>
+      </div>
+    </div>
+    <div class="cellside">
+      <p class="eyebrow" id="cellName"></p>
+      <table class="facts">
+        <thead><tr><th></th><th>Stored outline</th><th>SAM 3.1</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Dents</th><td>0</td><td id="factDents"></td></tr>
+          <tr><th scope="row">Solidity</th><td>1.000</td><td id="factSolid"></td></tr>
+        </tbody>
+      </table>
+      <p class="note" id="cellLabel"></p>
+      <p class="note">The tracker saved a convex outline for every cell, like a rubber band around a star. It was built to follow cells. The lab rated cells by eye, so this is no criticism of their labels.</p>
+      <p class="note" id="cellLimit"></p>
+    </div>
+  </div>
+  <div class="gallery-head">
+    <h3>More cells</h3>
+    <div class="seg" role="group" aria-label="Filter cells">
+      <button type="button" data-group="spiky">Spiky</button>
+      <button type="button" data-group="smooth">Smooth</button>
+      <button type="button" data-group="random">Random</button>
+    </div>
+  </div>
+  <div id="gallery" class="gallery"></div>
 </section>
-<section id="view-decision">
-  <h2>Raw vs flow-adjusted change, RCV95 band</h2>
-  <div><button id="btnNaive">Naive</button> <button id="btnAdj" class="active">Flow-adjusted</button> <span class="hint">Naive reads the raw change at face value; flow-adjusted removes the flow artefact before the RCV decision — the QC gate is what stops flow/QC swings being read as drug effects.</span></div>
-  <div id="decisionCard" class="card"></div>
-  <div class="card"><h3>Longitudinal trajectory — selected patient</h3><div id="longChart"></div>
-  <p class="hint">Gray = raw, teal = flow-adjusted (RCV95 band). Red zones = QC-blocked visits (skip rate &gt; 0.25).</p></div>
-  <div class="card"><h3>Trial Run-Count Planner</h3>
-  <label>Target MDC95 <input id="plTarget" type="number" step="0.01" value="0.05"></label>
-  <label>Expected fraction p <input id="plP" type="number" step="0.01" value="0.40"></label>
-  <label>Overdispersion φ <input id="plPhi" type="number" step="0.1" value="2.5"></label>
-  <label>Cells per run <input id="plCells" type="number" step="10" value="110"></label>
-  <button id="btnPlan">Calculate runs needed</button> <span id="planOut"></span>
-  <p class="hint">Per-visit variance = φ·p(1−p)/N, N = runs × cells/run (v3: label variance excluded — classifier disagreement is not fraction noise; docs/STATS_VALIDATION.md).</p></div>
-  <p>Reference flow 0.016 µL/s. Patient-intercept GLM + cluster bootstrap (run-level, B=2000). QC-blocked pairs (skip rate &gt; 0.25 or low kept cells) are refused a decision.</p>
+
+<section id="view-report" class="view" hidden>
+  <div class="hero small">
+    <h2>Try to break a signed report</h2>
+    <p class="lede">Your browser checks each report against a public key. Change the text or a number and see which check stops it. No server is involved.</p>
+  </div>
+  <div class="controls">
+    <label>Report <select id="reportSel"></select></label>
+    <div class="presets" role="group" aria-label="Ways to tamper with the report">
+      <button type="button" class="ghost" data-tamper="number">Change a number</button>
+      <button type="button" class="ghost" data-tamper="clinical">Add medical advice</button>
+      <button type="button" class="ghost" data-tamper="paraphrase">Hide advice in normal words</button>
+      <button type="button" class="ghost" data-tamper="byte">Flip a signed digit</button>
+      <button type="button" class="ghost" data-tamper="reset">Reset</button>
+    </div>
+  </div>
+  <p class="reading" id="reportVerdict" aria-live="polite"></p>
+  <div class="reportgrid">
+    <div>
+      <label class="stacked" for="reportText">Report text. You can edit it.</label>
+      <textarea id="reportText" spellcheck="false" rows="15"></textarea>
+    </div>
+    <ol class="gates" id="gates"></ol>
+  </div>
+  <section class="trail" aria-labelledby="trailTitle">
+    <h3 id="trailTitle">What the agent did</h3>
+    <ol id="agentTrail" class="chips"></ol>
+    <p class="note" id="agentNote"></p>
+  </section>
 </section>
-<section id="view-report" hidden>
-  <h2>Verified report — Checker gate</h2>
-  <div><button id="btnReport">Generate &amp; verify report</button>
-  <button id="btnTamperNumber">Simulate Tamper: modified number</button>
-  <button id="btnTamperAdvice">Simulate Tamper: clinical-advice phrase</button>
-  <button id="btnTamperPayload">Simulate Tamper: payload edit</button></div>
-  <pre id="reportBox" class="card"></pre>
-  <div id="gateBox" class="card"></div>
-  <div class="card"><strong>Researcher sign-off (mandatory):</strong>
-  <div><label for="reviewNote">Overlay review note</label><br>
-  <textarea id="reviewNote" rows="3" cols="72" placeholder="Type, or dictate hands-free, then Approve/Flag"></textarea><br>
-  <button id="btnDictate">Dictate note (Muse Voice)</button> <span id="voiceState" class="hint">muse-voice-transcribe · cached · BLOCKED honestly without a key</span></div>
-  <button id="btnApprove">Approve</button> <button id="btnFlag">Flag</button> <span id="signoffState">Not reviewed</span></div>
+
+<section id="view-method" class="view" hidden>
+  <div class="hero small">
+    <h2>How it decides, and what failed</h2>
+    <p class="lede">The statistics decide. AI does the looking, the writing and the checking. AI cannot change the numbers.</p>
+  </div>
+
+  <section>
+    <h3>From recording to signed report</h3>
+    <ol class="steps">
+      <li><b>Check the recording.</b> If too many cells cannot be read, stop. No decision.</li>
+      <li><b>Correct for speed.</b> Bring every visit to the same flow.</li>
+      <li><b>Measure the normal wobble.</b> Use the repeated runs of that visit.</li>
+      <li><b>Decide.</b> Inside the wobble, outside it, or no decision.</li>
+      <li><b>Write and sign.</b> An agent writes the words. The numbers come from code and are signed.</li>
+      <li><b>A person signs off.</b> Nothing is final before that.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h3>Five predictions, frozen before the sealed patients were opened</h3>
+    <div id="predictions" class="predictions"></div>
+  </section>
+
+  <section>
+    <h3>What did not work</h3>
+    <ul class="plain" id="notWorked"></ul>
+  </section>
+
+  <section>
+    <h3>Same open model, different hosts</h3>
+    <p class="note" id="parityNote"></p>
+    <div class="tablewrap"><table id="hostTable" class="data"></table></div>
+  </section>
+
+  <section>
+    <h3>Faster flow, fewer spiky cells</h3>
+    <figure class="plot flat">
+      <figcaption id="flowFitCaption"></figcaption>
+      <div id="flowChart" class="chart"></div>
+    </figure>
+  </section>
+
+  <section>
+    <h3>How many runs does a visit need?</h3>
+    <form id="planner" class="planner">
+      <label>Smallest change to detect, points <input id="plTarget" type="number" step="1" min="1" value="5"></label>
+      <label>Share of spiky cells, % <input id="plP" type="number" step="1" min="1" max="99" value="40"></label>
+      <label>Extra run-to-run noise <input id="plPhi" type="number" step="0.1" min="1"></label>
+      <label>Cells per run <input id="plCells" type="number" step="10" min="10" value="100"></label>
+    </form>
+    <p class="reading" id="planOut"></p>
+  </section>
+
+  <section>
+    <h3>Where else this could work</h3>
+    <p class="note">Built for one rare disease. The method fits any lab that measures the same sample many times, records what might disturb the measurement, and compares visits. Candidates: other blood cell shape tests, stored blood quality, imaging flow cytometry, manual cell counts. None of these has been tested yet. Each one needs its own calibration.</p>
+  </section>
+
+  <section>
+    <h3>Limits</h3>
+    <ul class="plain" id="limits"></ul>
+  </section>
+
+  <section>
+    <details>
+      <summary>All 32 visit pairs as a table</summary>
+      <div class="tablewrap"><table id="pairsTable" class="data"></table></div>
+    </details>
+  </section>
+
+  <p class="foot" id="methodFoot"></p>
 </section>
+
 </main>
-<script src="/app.js"></script>
-</body></html>
+
+<div id="tip" class="tip" hidden></div>
+<script src="verify.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

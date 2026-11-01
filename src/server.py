@@ -124,7 +124,17 @@ def public_mode():
     return os.environ.get("PUBLIC_MODE") == "1"
 
 STATIC_ALLOWLIST = {"/": ("index.html", "text/html"), "/index.html": ("index.html", "text/html"),
-                    "/app.js": ("app.js", "text/javascript"), "/style.css": ("style.css", "text/css")}
+                    "/app.js": ("app.js", "text/javascript"), "/verify.js": ("verify.js", "text/javascript"),
+                    "/style.css": ("style.css", "text/css")}
+PACK_TYPES = {".json": "application/json", ".png": "image/png", ".webp": "image/webp", ".hex": "text/plain", ".woff2": "font/woff2"}
+
+def pack_file(path):
+    """A file under web/demo or web/fonts, or None. Never leaves those two folders."""
+    top = path.split("/")[1] if path.count("/") >= 2 else ""
+    if top not in ("demo", "fonts") or ".." in path: return None
+    f = (WEB / path.lstrip("/")).resolve()
+    base = (WEB / top).resolve()
+    return f if base in f.parents and f.is_file() and f.suffix in PACK_TYPES else None
 
 def live_status():
     if public_mode():
@@ -264,6 +274,11 @@ class H(BaseHTTPRequestHandler):
                 b = (WEB / name).read_bytes(); self.send_response(200)
                 self.send_header("Content-Type", ct); self.send_header("Content-Length", str(len(b)))
                 self.end_headers(); self.wfile.write(b); return
+            f = pack_file(path)
+            if f is not None:
+                b = f.read_bytes(); self.send_response(200)
+                self.send_header("Content-Type", PACK_TYPES[f.suffix]); self.send_header("Content-Length", str(len(b)))
+                self.end_headers(); self.wfile.write(b); return
             return self.send_json({"error": "not found"}, 404)
         except Exception as e:
             return self.send_json({"error": f"{type(e).__name__}: {e}"}, 500)
@@ -299,6 +314,12 @@ class H(BaseHTTPRequestHandler):
             import re as _re
             if not _re.fullmatch(r"[0-9a-f]{64}", payload_sha) or not _re.fullmatch(r"[0-9a-f]{64}", report_sha):
                 return self.send_json({"error": "sign-off requires payload_sha256 and report_sha256 of the active report (generate a report first)"}, 400)
+            pair = (str(body.get("patient")), str(body.get("from")), str(body.get("to")))
+            env = None
+            if _re.fullmatch(r"P[1-5]", pair[0]) and _re.fullmatch(r"\d+w", pair[1]) and _re.fullmatch(r"\d+w", pair[2]):
+                env = _committed_envelope(*pair)
+            if env is None or env["payload"].get("payload_sha256") != payload_sha or env["payload"].get("report_sha256") != report_sha:
+                return self.send_json({"error": "sign-off refused: these hashes are not the signed report of this pair"}, 409)
             import datetime as _dt
             entry = {"ts": _dt.datetime.now(_dt.timezone.utc).isoformat(), "patient": body.get("patient"),
                      "from": body.get("from"), "to": body.get("to"), "decision": body.get("decision"),
