@@ -45,3 +45,24 @@ Pilot first, measure cost from reported tokens, then a hard stop in `tools/open_
 ---
 
 ## Results
+
+Run on 1 November 2026, dev cohort only. Cost $6.12 at list price from reported tokens, 1,944 calls, none blocked.
+
+**Verdict by the frozen rule: not usable as a reader.** Sealed patients were not run, as the rule says.
+
+| Measure | Result | Needed |
+|---|---|---|
+| Within-patient Spearman, visit shares | 0.293 (95% CI -0.242 to 0.703) | at least 0.5 |
+| Calibrated error | 12.16 points | at most 8 |
+| Same direction when the human moves 5 points or more | 8 of 14 pairs | reported |
+| `image_quality: poor` against unreadable rate | -0.006 | reported |
+| Cell level | agreement 0.675, AC1 0.384, cannot tell 26.5% | reported |
+
+What this means:
+
+- Single-cell errors did not cancel out. The model says spiky more often than the human (42% against 34% of the cells), and its visit share does not follow the human one.
+- The quality flag gives no information: the model called almost every frame poor.
+- This is one frame per cell at 48 pixels of height. The human saw the whole track. A different input could change the result, but that would be a new experiment.
+- One visit (P1 14w) had a single rated cell. Sensitivity check after the run, not part of the verdict: dropping visits under 20 cells gives a within-patient Spearman of 0.187, on 21 visits.
+
+Muse Spark Open stays a language auditor and a second opinion. It does not read cells for this project.

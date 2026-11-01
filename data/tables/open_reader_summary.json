@@ -1,0 +1,27 @@
+{
+ "cells_read": 1944,
+ "cells_rated": 1428,
+ "cannot_tell_share": 0.265,
+ "said_spiky_share": 0.424,
+ "human_spiky_share": 0.342,
+ "cell_agreement": 0.675,
+ "cell_ac1": 0.384,
+ "visits": 22,
+ "within_patient_spearman": 0.293,
+ "within_patient_spearman_ci95": [
+  -0.242,
+  0.703
+ ],
+ "calibrated_mae_points": 12.16,
+ "raw_mae_points": 12.39,
+ "direction_same": 8,
+ "direction_pairs": 14,
+ "quality_vs_unreadable_spearman": -0.006,
+ "verdict": "not usable as a reader",
+ "new_call_cost_usd": 6.124,
+ "sensitivity_without_small_visits": {
+  "visits": 21,
+  "within_patient_spearman": 0.187,
+  "note": "post hoc, not part of the verdict"
+ }
+}
