@@ -30,6 +30,6 @@ On baseten: advice hidden in normal words stopped 12 of 12 (fixed rules 0 of 12)
 
 **Links**
 
-- Repository: REPO_URL
-- Live page: LIVE_URL
+- Repository: https://github.com/remiyelin/HelpChoreAI
+- Live page: https://sain-muhammed-ali--helpchoreai-web.us-east.modal.run
 - Video: VIDEO_URL
