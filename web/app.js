@@ -192,7 +192,7 @@ function decisionView() {
   });
   alarmDots(); heroChart(); setPair(CURATED[0], "normal");
   const t = D.tools;
-  $("#heroFoot").textContent = `Built on SAM 3.1, Muse Spark 1.3, Muse Spark Open, Muse Voice Transcribe and Muse Code. Replay of signed results from public data (Reichel et al. 2022, CC BY 4.0). Live run: see README.`;
+  $("#heroFoot").textContent = `Built on SAM 3.1, Muse Spark 1.3, Muse Spark Open and Muse Code (muse-wonder-1.0). Replay of signed results from public data (Reichel et al. 2022, CC BY 4.0). Live run: see README.`;
 }
 
 /* ---------- Cells ---------- */

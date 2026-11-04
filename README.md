@@ -66,8 +66,7 @@ Validation-ready, not validated: requirements, traceability and IQ/OQ/PQ drafts 
 | SAM 3.1 | Draws the real cell edge from a box prompt (about 2,200 cached calls). Video tracking, with a position gate for identity lag |
 | Muse Spark 1.3 | Audit agent with tool calling; second rater with an enforced schema (about 335 cached calls, plus agent turns) |
 | Muse Spark Open | Open-weight agent, report auditor and claim checker, through OpenAI-compatible hosts (about 2,500 cached calls). Tested as a cell reader and rejected. See [docs/OPEN_WEIGHT.md](docs/OPEN_WEIGHT.md) and [docs/CLAIM_CHECK.md](docs/CLAIM_CHECK.md) |
-| Muse Voice Transcribe | Hands-free review notes in the local tool |
-| Muse Code | Wrote most of this repository |
+| Muse Code (`muse-wonder-1.0`) | Wrote most of this repository |
 
 ## Built during the hackathon
 
@@ -136,7 +135,7 @@ Open the page locally:
 python -m http.server 8000 --directory web
 ```
 
-The page replays signed results and calls no model. The local tool with sign-off and voice notes runs with `uv run python src/server.py` on port 8765. Live model calls need keys in `.env` (see `.env.example`).
+The page replays signed results and calls no model. The local tool with sign-off runs with `uv run python src/server.py` on port 8765. Live model calls need keys in `.env` (see `.env.example`).
 
 Raw data is not in the repository. `tools/figshare_ingest.py` fetches it from the public source.
 

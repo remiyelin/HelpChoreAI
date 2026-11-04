@@ -27,7 +27,7 @@ the SIL Open Font License 1.1.
 
 ## Models
 
-- Meta Model API: SAM 3.1, Muse Spark 1.3, Muse Voice Transcribe.
+- Meta Model API: SAM 3.1, Muse Spark 1.3.
 - Muse Spark Open, open weights, through OpenAI-compatible hosts. Each host
   tested is listed in `docs/OPEN_WEIGHT.md`.
 
@@ -37,7 +37,7 @@ of them: cell outlines, audit verdicts and report narratives.
 
 ## AI tools used to build and check this repository
 
-- Muse Code wrote most of the code.
+- Muse Code (`muse-wonder-1.0`) wrote most of the code.
 - Claude Code wrote the static demo pack, the public interface, the video clip
   tools and the final documents, and audited the repository.
 - Antigravity and Gemini checked the steps and reviewed results.

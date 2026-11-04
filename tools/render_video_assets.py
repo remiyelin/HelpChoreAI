@@ -300,7 +300,7 @@ def v07(repo, live):
     y = 590
     for t in (repo, live):
         if t: put(end, label(t, 38, INK, "mono"), W / 2, y, "mm"); y += 66
-    put(end, label("SAM 3.1  \u00b7  Muse Spark 1.3  \u00b7  Muse Spark Open  \u00b7  Muse Voice Transcribe  \u00b7  Muse Code", 34, MUTED), W / 2, 800, "mm")
+    put(end, label("SAM 3.1  \u00b7  Muse Spark 1.3  \u00b7  Muse Spark Open  \u00b7  Muse Code (muse-wonder-1.0)", 34, MUTED), W / 2, 800, "mm")
     put(end, label("Research use only. Not medical advice.", 30, MUTED), W / 2, 870, "mm")
     n = FPS
     for i in range(n): c.add(cv2.addWeighted(f, 1 - (i + 1) / n, end, (i + 1) / n, 0))

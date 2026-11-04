@@ -16,7 +16,7 @@ SAM 3.1 draws the real cell edge. A Muse Spark agent writes each audit, but it c
 
 Any lab can run the same rule on its own table with one command. We publish what failed too. It treats no one. It stops a small study from fooling itself.
 
-**Meta tools:** SAM 3.1, Muse Spark 1.3, Muse Spark Open, Muse Voice Transcribe, Muse Code
+**Meta tools:** SAM 3.1, Muse Spark 1.3, Muse Spark Open, Muse Code (muse-wonder-1.0)
 
 <!--open-result-->
 Open weights: 21 of 21 reports signed in open-weight mode carry the same numbers as the cloud run.
