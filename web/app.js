@@ -396,9 +396,9 @@ function methodView() {
     `The lab's label pools two kinds of spiky cell.`, `Why speed changes the reading is not measured here. Only that it does.`,
     `This does not diagnose or treat. Whether red cell shape tracks the disease in the brain is unknown.`].forEach((x) => el("li", {}, $("#limits"), x));
   const ex = D.example;
-  $("#exampleNote").textContent = `Example with made-up data and a known answer: a real rise at S1 visit 3, a false alarm at S2 visit 3 from samples that waited too long, a bad recording at S2 visit 4. The tool recovered the disturbance slope (${ex.info.slope.toFixed(2)}, planted -0.32).`;
+  $("#exampleNote").textContent = `Real sealed holdout table (examples/reichel2022_sealed_holdout.csv ? Reichel et al. 2022 patients P3 and P5, ${ex.info.runs} runs, ${ex.info.pairs} visit pairs): the tool recovered the flow slope (${ex.info.slope.toFixed(2)}) and repeated all ${ex.info.pairs} frozen holdout decisions.`;
   const et = $("#exampleTable"), eh = el("tr", {}, el("thead", {}, et));
-  ["Pair (synthetic)", "Normal reading", "Corrected", "Wobble", "Decision"].forEach((h) => el("th", { scope: "col" }, eh, h));
+  ["Pair (real sealed holdout)", "Normal reading", "Corrected", "Wobble", "Decision"].forEach((h) => el("th", { scope: "col" }, eh, h));
   const eb = el("tbody", {}, et);
   ex.pairs.forEach((p) => {
     const r = el("tr", {}, eb);

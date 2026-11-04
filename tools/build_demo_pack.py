@@ -239,8 +239,8 @@ def open_pack():
 
 
 def example_pack():
-    pairs, _v, info = audit_table.audit(audit_table.load(ROOT / "examples" / "synthetic_other_lab.csv"))
-    write("example.json", {"synthetic": True, "info": info, "pairs": pairs.to_dict("records")})
+    pairs, _v, info = audit_table.audit(audit_table.load(ROOT / "examples" / "reichel2022_sealed_holdout.csv"), reference=0.016, unreadable_rule="frozen")
+    write("example.json", {"synthetic": False, "info": info, "pairs": pairs.to_dict("records")})
 
 
 def tool_counts():

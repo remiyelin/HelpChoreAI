@@ -83,7 +83,7 @@ All code in this repository was written during the event. First commit: 28 Octob
 Any lab can run the same rule on its own run table. One command, no model, no key, nothing leaves your computer:
 
 ```bash
-uv run python tools/audit_table.py examples/synthetic_other_lab.csv
+uv run python tools/audit_table.py examples/reichel2022_sealed_holdout.csv --reference 0.016
 ```
 
 Use one row per run:
@@ -98,7 +98,7 @@ Use one row per run:
 
 It returns each visit pair with the normal reading, the corrected change, the normal wobble and the decision, plus the smallest change this protocol can call and an estimate of the runs needed.
 
-`tests/test_audit_table.py` checks that it repeats all 32 decisions on this project's real tables. It also recovers what was planted in the synthetic table, made by `examples/make_synthetic_table.py`: a real rise, a false alarm from samples that waited too long, and a bad recording. The example file is made-up data.
+`tests/test_audit_table.py` checks that it repeats all 32 decisions on this project's real dev and sealed holdout tables (`examples/reichel2022_sealed_holdout.csv`, Reichel et al. 2022 patients P3 and P5).
 
 ## Where else this could work
 
