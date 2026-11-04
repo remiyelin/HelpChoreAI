@@ -55,6 +55,10 @@ On baseten: advice hidden in normal words stopped 12 of 12 (fixed rules 0 of 12)
 - In video mode SAM kept cells in view, but spiky and smooth cells were no longer different in shape. So we track on video and measure on single frames.
 - Five predictions were frozen before unsealing. One held fully, four missed at least in part. See the scorecards in [PREREGISTRATION.md](PREREGISTRATION.md) and [docs/POPULATION.md](docs/POPULATION.md).
 
+## Validation status
+
+Validation-ready, not validated: requirements, traceability and IQ/OQ/PQ drafts map to automated tests, with no independent approval. A second public RT-DC dataset serves as a positive control. See [docs/VALIDATION.md](docs/VALIDATION.md).
+
 ## Meta tools
 
 | Tool | What it does here |

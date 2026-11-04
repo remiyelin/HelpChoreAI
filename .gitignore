@@ -34,6 +34,7 @@ data/fetch_manifest/fetch_log_step1.json
 .vscode/
 private/
 pytest-of-*/
+.pytest_cache/
 data/signoffs.json
 data/signoffs.jsonl
 docs/media/p03_overlay_*.png

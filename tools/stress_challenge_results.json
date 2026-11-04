@@ -1,0 +1,278 @@
+{
+  "permutation_test": {
+    "global_gauss": {
+      "mean_delta_aic": -1.0310347203693342,
+      "median_delta_aic": -1.5756465225390173,
+      "max_delta_aic": 10.850984169779963,
+      "fp_rate": 0.043,
+      "p_emp": 0.0,
+      "slope_mean": -0.00027326845527965866,
+      "slope_std": 0.005928657471321181,
+      "slope_ci95": [
+        -0.011598405613232892,
+        0.01141374307171682
+      ]
+    },
+    "stratified_gauss": {
+      "mean_delta_aic": -0.8881246456070194,
+      "median_delta_aic": -1.5023829723457993,
+      "max_delta_aic": 11.775934660325163,
+      "fp_rate": 0.054,
+      "slope_mean": -0.00015741692240166347,
+      "slope_std": 0.0062225672996801375
+    }
+  },
+  "per_replicate_stability": {
+    "dates": {
+      "20151019": {
+        "n_runs": 21,
+        "gauss_b": 0.050381175533476444,
+        "gauss_se": 0.003995200889673556,
+        "gauss_p": 1.849960431895188e-36,
+        "gauss_delta_aic": 44.98692370845069,
+        "binom_b": 0.5699136523836069,
+        "binom_p": 1.85707865397286e-50,
+        "spearman_rho": 0.9438798074485389,
+        "spearman_p": 1.375390741449937e-10
+      },
+      "20151128": {
+        "n_runs": 21,
+        "gauss_b": 0.052621003618460095,
+        "gauss_se": 0.009039294709103942,
+        "gauss_p": 5.8370109732883865e-09,
+        "gauss_delta_aic": 19.49858718260512,
+        "binom_b": 0.5386417161662442,
+        "binom_p": 9.217771034440905e-64,
+        "spearman_rho": 0.789776981742655,
+        "spearman_p": 2.063695255566077e-05
+      },
+      "20151130": {
+        "n_runs": 21,
+        "gauss_b": 0.05116623975502962,
+        "gauss_se": 0.006938922910392123,
+        "gauss_p": 1.6583011937658942e-13,
+        "gauss_delta_aic": 26.373442897184418,
+        "binom_b": 0.517400305250937,
+        "binom_p": 1.4605992698456362e-49,
+        "spearman_rho": 0.866828394595597,
+        "spearman_p": 3.712832222317198e-07
+      },
+      "20151206": {
+        "n_runs": 21,
+        "gauss_b": 0.053767092106589975,
+        "gauss_se": 0.007443979994820779,
+        "gauss_p": 5.089199709742833e-13,
+        "gauss_delta_aic": 25.733346615514748,
+        "binom_b": 0.5468021444923161,
+        "binom_p": 3.3983415823731e-56,
+        "spearman_rho": 0.866828394595597,
+        "spearman_p": 3.712832222317198e-07
+      },
+      "20151213": {
+        "n_runs": 21,
+        "gauss_b": 0.05544790657627517,
+        "gauss_se": 0.006829696097413504,
+        "gauss_p": 4.714010369638352e-16,
+        "gauss_delta_aic": 29.44082023845266,
+        "binom_b": 0.5980507110583025,
+        "binom_p": 4.4080186684988555e-80,
+        "spearman_rho": 0.8860912478088324,
+        "spearman_p": 9.099324980648035e-08
+      }
+    },
+    "all_positive": true,
+    "mean_b": 0.05267668351796626,
+    "std_b": 0.0018123225787981057,
+    "cv_b": 0.0344046446694007
+  },
+  "variance_reduction_invariance": {
+    "linear_invariant": true,
+    "linear_pct": 73.50722652011143,
+    "ref_flow_data": {
+      "0.01": {
+        "linear": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.00020775079263860347,
+          "red_pct": 73.50722652011143
+        },
+        "logit": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 3.4827933675523123e-05,
+          "red_pct": 95.5586761142072
+        }
+      },
+      "0.02": {
+        "linear": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.00020775079263860347,
+          "red_pct": 73.50722652011143
+        },
+        "logit": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 6.969936371366557e-05,
+          "red_pct": 91.11180549009664
+        }
+      },
+      "0.04": {
+        "linear": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.00020775079263860347,
+          "red_pct": 73.50722652011143
+        },
+        "logit": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.00013497771344894515,
+          "red_pct": 82.78738703319033
+        }
+      },
+      "0.06": {
+        "linear": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.00020775079263860347,
+          "red_pct": 73.50722652011143
+        },
+        "logit": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.0001947220503584134,
+          "red_pct": 75.16867634455261
+        }
+      },
+      "0.08": {
+        "linear": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.00020775079263860347,
+          "red_pct": 73.50722652011143
+        },
+        "logit": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.00024976172935061564,
+          "red_pct": 68.14991251974857
+        }
+      },
+      "0.1": {
+        "linear": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.00020775079263860352,
+          "red_pct": 73.50722652011143
+        },
+        "logit": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.0003007811960997114,
+          "red_pct": 61.643813753618794
+        }
+      },
+      "0.12": {
+        "linear": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.00020775079263860347,
+          "red_pct": 73.50722652011143
+        },
+        "logit": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.00034831638758684407,
+          "red_pct": 55.582036350042586
+        }
+      },
+      "0.15": {
+        "linear": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.0002077507926386035,
+          "red_pct": 73.50722652011143
+        },
+        "logit": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.00041399431650855395,
+          "red_pct": 47.20666280055191
+        }
+      },
+      "0.2": {
+        "linear": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.00020775079263860347,
+          "red_pct": 73.50722652011143
+        },
+        "logit": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.0005110290965410552,
+          "red_pct": 34.83260437015251
+        }
+      },
+      "0.5": {
+        "linear": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.00020775079263860352,
+          "red_pct": 73.50722652011143
+        },
+        "logit": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.0008975316726577092,
+          "red_pct": -14.454934167735288
+        }
+      },
+      "1.0": {
+        "linear": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.00020775079263860347,
+          "red_pct": 73.50722652011143
+        },
+        "logit": {
+          "var_raw": 0.0007841790999961296,
+          "var_adj": 0.00120613533291396,
+          "red_pct": -53.80865581853851
+        }
+      }
+    }
+  },
+  "boundary_tests": [
+    [
+      "Zero flow rates only",
+      "RAISED_EXCEPTION",
+      "ValueError: need at least one array to concatenate"
+    ],
+    [
+      "Extreme flow rates",
+      "NUMERICAL_STABILITY",
+      "Fit slope=0.0012, min MedD_adj=0.0607, max MedD_adj=0.1677"
+    ],
+    [
+      "ref_flow <= 0 in standardise",
+      "NAN_OR_INF_RETURNED",
+      "Returns NaN/Inf=True without raising ValueError"
+    ],
+    [
+      "Single-row DataFrame",
+      "RAISED_EXCEPTION",
+      "ValueError: The first guess on the deviance function returned a nan.  This could be a boundary  problem and should be reported."
+    ],
+    [
+      "Missing column 'FR'",
+      "KEY_ERROR_RAISED",
+      "Clean KeyError on missing FR"
+    ],
+    [
+      "Missing column 'MedD'",
+      "KEY_ERROR_RAISED",
+      "Clean KeyError on missing MedD"
+    ],
+    [
+      "Missing column 'Date'",
+      "KEY_ERROR_RAISED",
+      "Clean KeyError on missing Date"
+    ],
+    [
+      "Zero variance deformation",
+      "RAISED_EXCEPTION",
+      "ValueError: The first guess on the deviance function returned a nan.  This could be a boundary  problem and should be reported."
+    ],
+    [
+      "compute_spearman empty",
+      "RESULT",
+      "rho=nan, p=nan"
+    ],
+    [
+      "compute_spearman constant",
+      "RESULT",
+      "rho=nan, p=nan (NaN expected due to zero variance)"
+    ]
+  ]
+}
