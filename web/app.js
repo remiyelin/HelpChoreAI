@@ -231,7 +231,7 @@ function gallery() {
 function cellsView() {
   const s = D.headline.author_contour_solidity;
   $("#cellsLede").textContent = `Spikes are what the lab rates. But the tracking software saved a smooth outline for all ${s.n_cells.toLocaleString("en-US")} cells. SAM 3.1 follows the real edge.`;
-  $("#cellLimit").textContent = "SAM measures shape. Added to our classifier it gave little gain on all cells and none on the sealed patients. In video mode it follows cells, but the difference between spiky and smooth disappears, so we measure on single frames.";
+  $("#cellLimit").textContent = "SAM measures shape. Added to my classifier it gave little gain on all cells and none on the sealed patients. In video mode it follows cells, but the difference between spiky and smooth disappears, so I measure on single frames.";
   $$("#view-cells .cellgrid [data-step]").forEach((b) => b.addEventListener("click", () => { clearTimeout(stepTimer); setStep(b.dataset.step); }));
   $$(".gallery-head [data-group]").forEach((b) => b.addEventListener("click", () => { cellGroup = b.dataset.group; gallery(); }));
   gallery();
@@ -370,7 +370,7 @@ function methodView() {
     `Muse Spark Open as a cell reader. It read all ${D.open.reader.cells_read.toLocaleString("en-US")} cells, but its visit share did not follow the human one (correlation ${D.open.reader.within_patient_spearman.toFixed(2)}, error ${Math.round(D.open.reader.calibrated_mae_points)} points). By a rule frozen before the run, it does not read cells here.`,
     `One of five predictions held fully.`].forEach((t) => el("li", {}, $("#notWorked"), t));
   const cl = D.open.claims, said = { exceeds_RCV: "bigger than wobble", within_RCV: "inside wobble", indeterminate_QC: "no decision" };
-  $("#claimNote").textContent = `A study can overstate a result without changing a number. Muse Spark Open stopped ${cl.spark_open_stopped} of ${cl.beyond_data} sentences that said more than the signed result and passed ${cl.spark_open_passed_fair} of ${cl.fair} fair ones. A fixed word list stopped ${cl.word_list_stopped}. On a harder set it stopped ${cl.hard.spark_open_stopped} of ${cl.hard.beyond_data} and passed ${cl.hard.spark_open_passed_fair} of ${cl.hard.fair}; the word list stopped ${cl.hard.word_list_stopped}. We wrote these sentences ourselves, so this is a first test.`;
+  $("#claimNote").textContent = `A study can overstate a result without changing a number. Muse Spark Open stopped ${cl.spark_open_stopped} of ${cl.beyond_data} sentences that said more than the signed result and passed ${cl.spark_open_passed_fair} of ${cl.fair} fair ones. A fixed word list stopped ${cl.word_list_stopped}. On a harder set it stopped ${cl.hard.spark_open_stopped} of ${cl.hard.beyond_data} and passed ${cl.hard.spark_open_passed_fair} of ${cl.hard.fair}; the word list stopped ${cl.hard.word_list_stopped}. I wrote these sentences for this benchmark, so this is a first test.`;
   const ct = $("#claimTable"), ch = el("tr", {}, el("thead", {}, ct));
   ["Sentence", "Signed result", "Right answer", "Word list", "Spark Open"].forEach((h) => el("th", { scope: "col" }, ch, h));
   const cb = el("tbody", {}, ct);
