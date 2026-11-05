@@ -5,7 +5,7 @@
 ![One patient: stable near 20%, then 38%, then back](docs/media/video/thumb.png)
 
 - Live page: https://sain-muhammed-ali--helpchoreai-web.us-east.modal.run
-- Video: VIDEO_URL
+- Video: https://www.youtube.com/watch?v=TcaYY1QAScs
 
 Hackathon theme: **Push the Frontier**, "accelerate a scientific experiment".
 
